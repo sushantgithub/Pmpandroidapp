@@ -2,8 +2,8 @@ package com.sushant.pmpstudy.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Calculate
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -30,7 +30,7 @@ import com.sushant.pmpstudy.ui.screens.QuizScreen
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
-    Tab("learn", "Learn", Icons.Outlined.MenuBook),
+    Tab("learn", "Learn", Icons.AutoMirrored.Outlined.MenuBook),
     Tab("formulas", "Formulas", Icons.Outlined.Calculate),
     Tab("quiz", "Quiz", Icons.Outlined.Quiz)
 )
