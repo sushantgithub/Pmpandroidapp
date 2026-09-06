@@ -13,6 +13,14 @@ export ANDROID_HOME=/path/to/android-sdk
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
+## Download APK
+
+Prebuilt debug APK (Android 8.0+):
+
+https://github.com/sushantgithub/Pmpandroidapp/raw/cursor/pmp-study-android-app-50e4/releases/PMP_Study.apk
+
+On the phone, open the downloaded file and allow install from this source.
+
 ## Install
 
 Enable unknown sources, then install the APK on a device running Android 8.0 or later.
