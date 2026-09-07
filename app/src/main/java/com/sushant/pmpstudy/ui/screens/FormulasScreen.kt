@@ -39,7 +39,7 @@ fun FormulasScreen() {
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text("Formulas", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "Standard earned-value identities used on the exam. Work a numeric example, then scan the sheet.",
+            "Work a numeric example, then scan EVM, PERT, channels, EMV, and PTA. Practice until SPI, CPI, and EAC are automatic.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)

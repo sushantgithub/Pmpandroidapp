@@ -26,36 +26,46 @@ import com.sushant.pmpstudy.data.StudyRepository
 @Composable
 fun LearnScreen(onOpenChapter: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    val chapters = StudyRepository.chapters.filter { chapter ->
-        val haystack = (chapter.title + chapter.subtitle + chapter.sections.joinToString { it.body })
-            .lowercase()
+    val filtered = StudyRepository.chapters.filter { chapter ->
+        val haystack = (chapter.title + chapter.subtitle + chapter.category +
+            chapter.sections.joinToString { it.body }).lowercase()
         query.isBlank() || haystack.contains(query.lowercase())
     }
+    val grouped = filtered.groupBy { it.category }
+    val quizCount = StudyRepository.allQuestions.size
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        Text(
-            "PMP Study",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = 20.dp, bottom = 4.dp)
-        )
-        Text(
-            "Original notes for the exam content outline, delivery approaches, and math. Not affiliated with PMI.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("Search chapters") }
-        )
-        LazyColumn(
-            contentPadding = PaddingValues(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Text("PMP Study", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                "${StudyRepository.chapters.size} chapters · $quizCount practice items · ECO 2021 with PMBOK 8 context. Not affiliated with PMI.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+            )
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Search notes") }
+            )
+        }
+        grouped.forEach { (category, chapters) ->
+            item(key = "h-$category") {
+                Text(
+                    category,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+                )
+            }
             items(chapters, key = { it.id }) { chapter ->
+                val n = StudyRepository.questionsForChapter(chapter.id).size
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onOpenChapter(chapter.id) },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -68,6 +78,14 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
                         )
+                        if (n > 0) {
+                            Text(
+                                "$n section quiz items",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
                     }
                 }
             }

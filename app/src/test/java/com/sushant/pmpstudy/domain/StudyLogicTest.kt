@@ -2,6 +2,7 @@ package com.sushant.pmpstudy.domain
 
 import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EarnedValueMathTest {
@@ -23,17 +24,36 @@ class EarnedValueMathTest {
 
 class QuizGraderTest {
     @Test
-    fun perfectScore() {
-        val answers = StudyRepository.questions.associate { it.id to it.correctIndex }
-        val result = QuizGrader.grade(StudyRepository.questions, answers)
-        assertEquals(15, result.correct)
+    fun mixedExamHasTwentyItems() {
+        assertEquals(20, StudyRepository.mixedExam.questions.size)
+    }
+
+    @Test
+    fun everyChapterWithQuizHasUniqueIds() {
+        val ids = StudyRepository.allQuestions.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
+        assertTrue(StudyRepository.allQuestions.size >= 40)
+    }
+
+    @Test
+    fun perfectScoreOnMixed() {
+        val pack = StudyRepository.mixedExam
+        val answers = pack.questions.associate { it.id to it.correctIndex }
+        val result = QuizGrader.grade(pack.questions, answers)
+        assertEquals(20, result.correct)
         assertEquals(100, result.percent)
     }
 
     @Test
     fun emptyAnswersScoreZero() {
-        val result = QuizGrader.grade(StudyRepository.questions, emptyMap())
+        val result = QuizGrader.grade(StudyRepository.allQuestions, emptyMap())
         assertEquals(0, result.correct)
         assertEquals(0, result.percent)
+    }
+
+    @Test
+    fun pertQuestionIsSix() {
+        val q = StudyRepository.allQuestions.first { it.id == "sch4" }
+        assertEquals(1, q.correctIndex)
     }
 }
