@@ -13,6 +13,14 @@ export ANDROID_HOME=/path/to/android-sdk
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
+## Study notes (document)
+
+Original exam notes (topic map only from PMBOK 8; not a copy of PMI text):
+
+[`study-notes/PMP_Study_Notes.md`](study-notes/PMP_Study_Notes.md)
+
+## Download APK
+
 ## Download APK
 
 Prebuilt debug APK (Android 8.0+):
