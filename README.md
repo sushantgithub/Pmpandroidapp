@@ -19,7 +19,9 @@ Original exam notes (topic map only from PMBOK 8; not a copy of PMI text):
 
 [`study-notes/PMP_Study_Notes.md`](study-notes/PMP_Study_Notes.md)
 
-## Download APK
+HTML (open in a browser):
+
+[`study-notes/PMP_Study_Notes.html`](study-notes/PMP_Study_Notes.html)
 
 ## Download APK
 

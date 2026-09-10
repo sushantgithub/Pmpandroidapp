@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMP Study Notes (original)</title>
+<style>
+  :root {
+    --navy: #0D1F3C;
+    --blue: #1B4FBF;
+    --teal: #0E8A7A;
+    --amber: #D97706;
+    --bg: #F6F8FC;
+    --surface: #fff;
+    --border: #DDE3EF;
+    --muted: #64748B;
+    --text: #1A2540;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, system-ui, Segoe UI, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15.5px;
+    line-height: 1.7;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  nav {
+    width: 250px;
+    min-width: 250px;
+    background: var(--navy);
+    color: #94A3B8;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px 12px 32px;
+  }
+  nav h1 { color: #fff; font-size: 18px; margin-bottom: 4px; }
+  nav .sub { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 16px; }
+  nav a {
+    display: block;
+    color: #94A3B8;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: 6px;
+  }
+  nav a:hover, nav a:focus { background: #1E3A5F; color: #fff; }
+  main { flex: 1; min-width: 0; padding: 32px 40px 80px; max-width: 920px; }
+  .search {
+    position: sticky; top: 0; background: var(--bg); padding: 0 0 16px; z-index: 5;
+  }
+  .search input {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 14px;
+  }
+  .hero {
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    color: #fff; border-radius: 16px; padding: 32px 36px; margin-bottom: 36px;
+  }
+  .hero p { color: #BAD7FF; margin-top: 10px; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .hero-stat {
+    background: rgba(255,255,255,.12); border-radius: 8px; padding: 8px 14px; text-align: center;
+  }
+  .hero-stat strong { display: block; font-size: 20px; }
+  .hero-stat span { font-size: 11px; color: #93C5FD; }
+  .section { margin-bottom: 48px; scroll-margin-top: 72px; }
+  h2 {
+    font-size: 26px; color: var(--navy);
+    border-bottom: 3px solid var(--blue);
+    padding-bottom: 8px; margin-bottom: 20px;
+  }
+  h3 { font-size: 17px; color: var(--blue); margin: 22px 0 8px; }
+  p, li { margin-bottom: 10px; }
+  ul, ol { padding-left: 22px; margin-bottom: 14px; }
+  .note, .warn {
+    border-radius: 8px; padding: 14px 16px; margin: 16px 0; border-left: 4px solid;
+  }
+  .note { background: #EEF4FF; border-color: var(--blue); color: #1E3A6E; }
+  .warn { background: #FEF9EC; border-color: var(--amber); color: #78350F; }
+  .formula {
+    background: var(--navy); color: #7DD3FC; border-radius: 8px;
+    padding: 10px 16px; font-family: ui-monospace, Consolas, monospace;
+    font-size: 13.5px; margin: 6px 0;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 9px 12px; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFF; }
+  .tbl { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin: 14px 0; }
+  .eco { margin: 14px 0 20px; }
+  .eco-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .track { background: var(--border); height: 10px; border-radius: 20px; overflow: hidden; margin-bottom: 10px; }
+  .fill { height: 100%; border-radius: 20px; }
+  mark { background: #FEF08A; }
+  @media (max-width: 860px) {
+    nav { display: none; }
+    main { padding: 20px 16px 60px; }
+  }
+  @media print {
+    nav, .search { display: none; }
+    main { max-width: none; padding: 0; }
+    .hero { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <h1>PMP Study Notes</h1>
+  <div class="sub">Original · not PMI text</div>
+  <a href="#use">How to use</a>
+  <a href="#project">1. Project vs operations</a>
+  <a href="#value">2. Value &amp; roles</a>
+  <a href="#principles">3. Six principles</a>
+  <a href="#lifecycle">4. Life cycles</a>
+  <a href="#domains">5. Seven domains</a>
+  <a href="#tailor">6. Tailoring</a>
+  <a href="#itto">7. Inputs / tools</a>
+  <a href="#extras">8. PMO, AI, buying</a>
+  <a href="#agile">9. Agile &amp; ECO</a>
+  <a href="#formulas">10. Formulas</a>
+  <a href="#traps">11. Exam traps</a>
+  <a href="#drills">12. Mini drills</a>
+</nav>
+<main>
+  <div class="search">
+    <input id="q" type="search" placeholder="Search these notes…" oninput="filterNotes(this.value)">
+  </div>
+
+  <div class="hero">
+    <h1 style="font-size:32px;line-height:1.15;margin-bottom:8px;">PMP study notes</h1>
+    <p>Independent exam commentary. Not PMI courseware, not a copy of the PMBOK® Guide. Topic checklist only from the Eighth Edition table of contents. Practice how to think on test day.</p>
+    <div class="hero-meta">
+      <div class="hero-stat"><strong>180</strong><span>Questions</span></div>
+      <div class="hero-stat"><strong>230</strong><span>Minutes</span></div>
+      <div class="hero-stat"><strong>~50/50</strong><span>Predictive / Agile</span></div>
+      <div class="hero-stat"><strong>3</strong><span>ECO domains</span></div>
+    </div>
+  </div>
+
+  <div class="section" id="use">
+    <h2>How to use these notes</h2>
+    <ol>
+      <li>Skim a section, then cover it and recap out loud in 60 seconds.</li>
+      <li>For every situational item, run <strong>A.R.T.</strong>: Assess → Review artifacts/agreements → Take the smallest professional action.</li>
+      <li>Name the <strong>approach</strong> first (predictive / adaptive / hybrid) before you pick a tool.</li>
+      <li>Drill formulas until SPI, CPI, and EAC are automatic.</li>
+      <li>Sleep and full-length mocks matter more than rereading.</li>
+    </ol>
+    <div class="eco">
+      <div class="eco-row"><span>People</span><span>42%</span></div>
+      <div class="track"><div class="fill" style="width:42%;background:#1B4FBF"></div></div>
+      <div class="eco-row"><span>Process</span><span>50%</span></div>
+      <div class="track"><div class="fill" style="width:50%;background:#0E8A7A"></div></div>
+      <div class="eco-row"><span>Business Environment</span><span>8%</span></div>
+      <div class="track"><div class="fill" style="width:8%;background:#D97706"></div></div>
+    </div>
+    <p>Public ECO snapshot: mix of item types, two optional 10-minute breaks. Roughly half the scored work feels predictive and half agile/hybrid. PMI does not publish a raw cut score.</p>
+  </div>
+
+  <div class="section" id="project">
+    <h2>1. What a project is (and is not)</h2>
+    <p>A <strong>project</strong> is temporary and unique: it creates a product, service, or result, then ends. <strong>Operations</strong> keep the lights on. Mixing them causes bad answers (treating BAU as a project, or never closing a project).</p>
+    <p><strong>Governance</strong> is how the organization decides, funds, and oversees work. Project governance should line up with that, not fight it.</p>
+    <p><strong>Portfolio</strong> aligns work to strategy. <strong>Program</strong> coordinates related projects for extra benefits. <strong>Project</strong> delivers a defined result. Strategy mix → portfolio. Shared benefits across projects → program.</p>
+  </div>
+
+  <div class="section" id="value">
+    <h2>2. Value delivery, environment, and roles</h2>
+    <p><strong>Value</strong> is why the work exists: benefits, not busy-ness. Success is more than “on time / on budget.” Ask who receives the benefit and when.</p>
+    <p><strong>EEFs</strong> are conditions you inherit (market, culture, regulations, infrastructure). <strong>OPAs</strong> are what the organization already owns (templates, lessons, procedures). Tailor inside those constraints; they are not optional.</p>
+    <div class="tbl"><table>
+      <tr><th>Shape</th><th>Typical PM authority</th></tr>
+      <tr><td>Functional / organic</td><td>Low</td></tr>
+      <tr><td>Weak matrix</td><td>Low</td></tr>
+      <tr><td>Balanced matrix</td><td>Shared — negotiate</td></tr>
+      <tr><td>Strong matrix</td><td>Moderate to high</td></tr>
+      <tr><td>Project-oriented</td><td>High</td></tr>
+    </table></div>
+    <p><strong>PMO</strong> flavors: supportive (templates), controlling (compliance), directive (runs projects).</p>
+    <ul>
+      <li><strong>Sponsor / customer / product owner</strong> — funds, value, or backlog order (title depends on approach).</li>
+      <li><strong>Project management team</strong> — integrate, coordinate, remove blockers.</li>
+      <li><strong>Team</strong> — does the work; in agile they self-manage <em>how</em>.</li>
+      <li><strong>End users and other stakeholders</strong> — identify more than once.</li>
+    </ul>
+    <p>Stems often ask <em>who should act</em>, not who has the fanciest title. Functions: oversight, feedback, facilitation, doing the work, expertise, organizational direction, providing resources.</p>
+  </div>
+
+  <div class="section" id="principles">
+    <h2>3. Six principles (study labels)</h2>
+    <p>Treat these as <strong>habits</strong>, not slogans to quote.</p>
+    <ol>
+      <li><strong>Holistic view</strong> — every decision has side effects on people, risk, cost, and later operations.</li>
+      <li><strong>Focus on value</strong> — drop or reshape work that does not serve the benefit case.</li>
+      <li><strong>Embed quality</strong> — build it in; do not inspect heroics at the end.</li>
+      <li><strong>Accountable leadership</strong> — integrity, trust, psychological safety; leadership can be shared.</li>
+      <li><strong>Sustainability</strong> — environmental, social, and economic effects belong in the design, not a poster at closeout.</li>
+      <li><strong>Empowered culture</strong> — push decisions to the people closest to the work, within agreed constraints.</li>
+    </ol>
+    <div class="note"><strong>Good-answer posture:</strong> proactive, ownership, value-driven. Bad answers skip analysis, hide bad news, or dump unsolved problems on the sponsor.</div>
+  </div>
+
+  <div class="section" id="lifecycle">
+    <h2>4. Life cycles, approaches, cadence, focus areas</h2>
+    <p><strong>Phase</strong> = chunk of work with exit criteria. <strong>Gate</strong> = go / no-go / change. Focus areas are <strong>not</strong> the same as phases; you can plan and control inside every phase.</p>
+    <ul>
+      <li><strong>Predictive</strong> — requirements stable enough to baseline; change control is formal.</li>
+      <li><strong>Adaptive</strong> — uncertainty is high; learn by delivering slices.</li>
+      <li><strong>Hybrid</strong> — lock what must be locked (law, contract date); keep empirical the uncertain middle.</li>
+    </ul>
+    <p>Choose based on deliverable uncertainty, project risk, and organization culture — not fashion. <strong>Cadence</strong> is when value shows up (one delivery, many, or a heartbeat), not whether you planned.</p>
+    <div class="tbl"><table>
+      <tr><th>Focus area</th><th>You are mostly…</th></tr>
+      <tr><td>Initiating</td><td>Authorizing, naming stakeholders, setting purpose</td></tr>
+      <tr><td>Planning</td><td>Elaborating how value will be created and controlled</td></tr>
+      <tr><td>Executing</td><td>Coordinating people and work</td></tr>
+      <tr><td>Monitoring and controlling</td><td>Measuring, comparing, correcting, routing change</td></tr>
+      <tr><td>Closing</td><td>Accepting, transferring, archiving, releasing</td></tr>
+    </table></div>
+    <p>Verb leaks: plan/estimate/define (planning); manage/conduct/implement (executing); monitor/control/validate (M&amp;C); finalize/close/transition (closing).</p>
+  </div>
+
+  <div class="section" id="domains">
+    <h2>5. Performance domains (seven)</h2>
+    <p>These absorb older knowledge-area labels. You still do integration, quality, communications, and procurement — the map moved.</p>
+
+    <h3>Governance</h3>
+    <p>Glue of the project: purpose, decision rights, integration, much of <strong>quality</strong>, and change control. Charter authorizes; the sponsor issues it (you may help write it). The plan integrates subsidiary plans and <strong>baselines</strong>.</p>
+    <div class="warn"><strong>Change control:</strong> after baselines exist, every baseline change needs impact analysis and the agreed path (often a CCB). Rank does not skip process.</div>
+    <p>Close in order: <strong>formal acceptance → knowledge transfer / lessons → transition → release people</strong>. Do not disband first.</p>
+
+    <h3>Scope</h3>
+    <p>Requirements have an owner and a test. Trace them. Predictive baseline = scope statement + WBS + WBS dictionary. <strong>Validate</strong> = acceptance with the customer. <strong>Control</strong> = stop silent growth. Gold plating is still extra scope. Adaptive: product owner orders the backlog; Definition of Done is the quality contract.</p>
+
+    <h3>Schedule</h3>
+    <p>Define → sequence → estimate → develop → control. Critical path is the <strong>longest</strong> path (usually zero total float). <strong>Crash</strong> = more resources (cost). <strong>Fast-track</strong> = overlap (risk). Neither is step one if you have not analyzed or talked about tradeoffs.</p>
+    <p>Estimating: analogous (fast, coarse), parametric (rate × quantity), three-point / PERT, bottom-up (slow, usually most accurate).</p>
+
+    <h3>Finance</h3>
+    <p>Broader than cost tracking: funding, reserves, benefits, forecasts. <strong>Contingency</strong> (known-unknowns) sits with the project inside the baseline. <strong>Management reserve</strong> (unknown-unknowns) sits with management until released.</p>
+    <p>EVM anchors: <strong>EV</strong> earned, <strong>PV</strong> planned, <strong>AC</strong> spent.</p>
+    <div class="formula">SV = EV − PV &nbsp;&nbsp; CV = EV − AC</div>
+    <div class="formula">SPI = EV / PV &nbsp;&nbsp; CPI = EV / AC</div>
+    <div class="formula">EAC typical = BAC / CPI &nbsp;&nbsp; remain at plan = AC + (BAC − EV)</div>
+    <div class="formula">ETC = EAC − AC &nbsp;&nbsp; VAC = BAC − EAC &nbsp;&nbsp; TCPI to BAC = (BAC − EV) / (BAC − AC)</div>
+    <p>Index &lt; 1 or negative variance is unfavorable.</p>
+
+    <h3>Stakeholders</h3>
+    <p>Identify <strong>again</strong> when new people appear. Map power/interest. Move people toward the engagement you need (unaware → resistant → neutral → supportive → leading). Communications: push / pull / interactive. Sensitive conflict: live conversation. Channels = n(n − 1)/2.</p>
+
+    <h3>Resources</h3>
+    <p>People, equipment, materials, and much of <strong>procurement</strong>. RACI: one Accountable per activity. Tuckman storming is normal — facilitate it. Servant leadership: remove impediments this week. FFP when scope is clear; cost-plus when not; T&amp;M with a cap. Do not shop one bidder’s price to another.</p>
+
+    <h3>Risk</h3>
+    <p>Risk = future and uncertain. Issue = already happening. Different logs. Flow: identify continuously → qualitative (and quantitative when it pays) → respond → implement → watch.</p>
+    <p>Threats: escalate, avoid, transfer, mitigate, accept. Opportunities: escalate, exploit, share, enhance, accept. Residual remains after a response; secondary is born from the response. EMV = probability × money.</p>
+  </div>
+
+  <div class="section" id="tailor">
+    <h2>6. Tailoring</h2>
+    <p>Tailoring is <strong>deliberate</strong>, not “we skipped docs because we are agile.”</p>
+    <ol>
+      <li>Pick a starting approach (predictive / adaptive / hybrid).</li>
+      <li>Adjust for the <strong>organization</strong> (governance, PMO, culture).</li>
+      <li>Adjust for <strong>this project</strong> (risk, team skill, constraints).</li>
+      <li><strong>Inspect</strong> (retrospectives, issues, quality, stakeholder feedback) and adjust again.</li>
+    </ol>
+    <p>If quality is falling or the team is drowning in ceremony, that is a tailoring signal.</p>
+  </div>
+
+  <div class="section" id="itto">
+    <h2>7. Inputs, outputs, tools (how to study them)</h2>
+    <p>Do <strong>not</strong> memorize every ITTO table. For each domain remember a trigger, a few typical inputs (charter, plan, logs, EEFs/OPAs), a few typical outputs (updated plan, change request, accepted deliverable), and tools that match uncertainty.</p>
+    <p>Expert judgment and meetings everywhere; data analysis when numbers matter; facilitation when people disagree. If two tools look right, pick the one that <strong>fits the approach in the stem</strong>.</p>
+  </div>
+
+  <div class="section" id="extras">
+    <h2>8. PMO, AI, procurement extras</h2>
+    <p><strong>PMO</strong> earns its keep by making it easier to deliver value — not by becoming a paperwork factory.</p>
+    <p><strong>AI</strong> is a tool: data quality, privacy, bias, and human accountability still belong to the project. Useful for drafting or clustering risks — not for secretly changing baselines or faking agreement.</p>
+    <p><strong>Procurement:</strong> claims need facts and ethics. Legal fights are last, not first. Contract type is a risk-allocation choice.</p>
+  </div>
+
+  <div class="section" id="agile">
+    <h2>9. Agile / Scrum (still half the exam)</h2>
+    <p>Agile is an <strong>umbrella</strong>. Manifesto: people, working product, customer collaboration, responding to change — <em>over</em> (not instead of) process, heavy docs, contract fights, and a frozen plan.</p>
+    <p><strong>Kanban:</strong> visualize, limit WIP, manage flow. Cycle time = start to done. Throughput = items per time.</p>
+    <p><strong>Scrum:</strong> transparency, inspection, adaptation. 3 roles, 5 events, 3 artifacts. Product owner orders the backlog. Scrum master coaches and unblocks. Developers own how to get to Done.</p>
+    <p><strong>People:</strong> coach, collaborate first on conflict, ground rules the team helped write, no public humiliation.</p>
+    <p><strong>Process:</strong> keep artifacts honest; hybrid honors both the CCB <em>and</em> the backlog.</p>
+    <p><strong>Business environment:</strong> dead business case → pause/pivot/cancel. New law → analyze then change/risk process. Safety → stop unsafe work first.</p>
+  </div>
+
+  <div class="section" id="formulas">
+    <h2>10. Formula sheet</h2>
+    <div class="tbl"><table>
+      <tr><th>Name</th><th>Expression</th></tr>
+      <tr><td>EV</td><td>% complete × BAC (for that work)</td></tr>
+      <tr><td>SV / CV</td><td>EV − PV &nbsp;&nbsp; EV − AC</td></tr>
+      <tr><td>SPI / CPI</td><td>EV / PV &nbsp;&nbsp; EV / AC</td></tr>
+      <tr><td>EAC typical</td><td>BAC / CPI</td></tr>
+      <tr><td>EAC remain at plan</td><td>AC + (BAC − EV)</td></tr>
+      <tr><td>ETC / VAC</td><td>EAC − AC &nbsp;&nbsp; BAC − EAC</td></tr>
+      <tr><td>TCPI to BAC</td><td>(BAC − EV) / (BAC − AC)</td></tr>
+      <tr><td>PERT expected</td><td>(O + 4M + P) / 6</td></tr>
+      <tr><td>Triangular</td><td>(O + M + P) / 3</td></tr>
+      <tr><td>PERT σ</td><td>(P − O) / 6</td></tr>
+      <tr><td>Channels</td><td>n(n − 1) / 2</td></tr>
+      <tr><td>EMV</td><td>probability × impact</td></tr>
+      <tr><td>PTA (FPIF)</td><td>((ceiling − target price) / buyer share) + target cost</td></tr>
+      <tr><td>Total float</td><td>LS − ES or LF − EF</td></tr>
+    </table></div>
+  </div>
+
+  <div class="section" id="traps">
+    <h2>11. Exam traps</h2>
+    <ul>
+      <li><strong>Do first</strong> ≠ crash / fast-track / cut scope. Analyze and align people first unless safety or law.</li>
+      <li><strong>Might / could</strong> = risk register. <strong>Has happened</strong> = issue log.</li>
+      <li><strong>Always / never</strong> are usually wrong except safety, ethics, and “all baseline changes go through change control.”</li>
+      <li>Live conversation beats a spicy email for conflict.</li>
+      <li>Do not fire, cancel a contract, or skip the CCB as a first move.</li>
+      <li>Closure: acceptance before lessons and before releasing the team.</li>
+      <li>Velocity is a forecast aid, not a weapon to compare teams.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="drills">
+    <h2>12. Mini drills</h2>
+    <ol>
+      <li>EV 80, PV 100, AC 90 — behind and over (SV −20, CV −10).</li>
+      <li>BAC 200, CPI 0.8 — typical EAC = 250.</li>
+      <li>Team grows 6 → 8 — channels 15 → 28.</li>
+      <li>“Might run out of testers next month” — risk, not issue.</li>
+      <li>VP wants a “tiny” baseline add tonight — change request + impact.</li>
+      <li>Hybrid: regulation date + unknown UI — plan the legal wrapper; iterate the UI.</li>
+      <li>Product backlog order — product owner.</li>
+      <li>Business case dead — talk benefits with the sponsor; consider cancel.</li>
+    </ol>
+    <div class="note">Read official PMI publications for definitions and the full standard. Use this file to rehearse decisions.</div>
+  </div>
+</main>
+</div>
+<script>
+function filterNotes(q) {
+  q = (q || '').trim().toLowerCase();
+  document.querySelectorAll('main .section').forEach(function (sec) {
+    if (!q) { sec.style.display = ''; return; }
+    sec.style.display = sec.innerText.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
