@@ -17,11 +17,8 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
 Original exam notes (topic map only from PMBOK 8; not a copy of PMI text):
 
-[`study-notes/PMP_Study_Notes.md`](study-notes/PMP_Study_Notes.md)
-
-HTML (open in a browser):
-
-[`study-notes/PMP_Study_Notes.html`](study-notes/PMP_Study_Notes.html)
+- Detailed HTML: [`study-notes/PMP_Study_Notes.html`](study-notes/PMP_Study_Notes.html)
+- Shorter markdown: [`study-notes/PMP_Study_Notes.md`](study-notes/PMP_Study_Notes.md)
 
 ## Download APK
 
