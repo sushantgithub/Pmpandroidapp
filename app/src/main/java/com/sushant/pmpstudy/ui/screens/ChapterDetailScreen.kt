@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.ui.components.StudyContentView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,12 +71,7 @@ fun ChapterDetailScreen(
                 ) {
                     Column(Modifier.padding(14.dp)) {
                         Text(section.heading, style = MaterialTheme.typography.titleSmall, color = colors.second)
-                        Text(
-                            section.body,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.second,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
+                        StudyContentView(body = section.body, textColor = colors.second)
                     }
                 }
             }
