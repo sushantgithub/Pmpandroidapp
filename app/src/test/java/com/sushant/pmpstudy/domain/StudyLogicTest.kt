@@ -61,4 +61,13 @@ class QuizGraderTest {
         val ids = StudyRepository.chapters.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
     }
+
+    @Test
+    fun hasWorkedExamplesAndAboutChapter() {
+        assertTrue(StudyRepository.chapters.any { it.id == "about" })
+        val examples = StudyRepository.chapters.flatMap { it.sections }.count { section ->
+            section.heading.startsWith("Worked example")
+        }
+        assertTrue(examples >= 20)
+    }
 }

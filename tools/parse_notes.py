@@ -4,7 +4,7 @@ import html as htmlmod
 import re
 import sys
 
-INPUT = sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/.cursor/projects/workspace/uploads/PMP_Study_Notesupdated_1c9b.txt"
+INPUT = sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/.cursor/projects/workspace/uploads/PMP_Study_Notes_withexample_1d0a.txt"
 OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else "/workspace/app/src/main/java/com/sushant/pmpstudy/data"
 
 CATEGORIES = {
@@ -27,6 +27,7 @@ CATEGORIES = {
     "ai": "Business & tailoring",
     "tailoring": "Business & tailoring",
     "agile": "Agile & Scrum",
+    "about": "Guide info",
     "cheatsheet": "Review",
 }
 
@@ -79,6 +80,28 @@ def parse_blocks(content: str) -> list:
         content,
         flags=re.DOTALL,
     )
+
+    def replace_balanced_div(html: str, marker: str) -> str:
+        idx = html.find(marker)
+        if idx < 0:
+            return html
+        pos = html.find(">", idx) + 1
+        depth = 1
+        while pos < len(html) and depth:
+            nxt_open = html.find("<div", pos)
+            nxt_close = html.find("</div>", pos)
+            if nxt_close < 0:
+                break
+            if nxt_open != -1 and nxt_open < nxt_close:
+                depth += 1
+                pos = nxt_open + 4
+            else:
+                depth -= 1
+                pos = nxt_close + 6
+        inner = html[idx:pos]
+        return html[:idx] + "<p>" + strip_tags(inner) + "</p>" + html[pos:]
+
+    content = replace_balanced_div(content, '<div class="about-card">')
     blocks = []
     pattern = re.compile(
         r"<h3[^>]*>(.*?)</h3>|"
@@ -86,7 +109,8 @@ def parse_blocks(content: str) -> list:
         r'<div class="callout (\w+)">.*?<div>(.*?)</div></div>|'
         r'<div class="formula-box">(.*?)</div>|'
         r'<div class="tbl-wrap"><table>(.*?)</table></div>|'
-        r'<div class="(?:two-col|card-grid|flow|art-box|example-box)[^"]*">(.*?)</div>|'
+        r'<div class="example-box">(.*?)</div>|'
+        r'<div class="(?:two-col|card-grid|flow|art-box)[^"]*">(.*?)</div>|'
         r"<p[^>]*>(.*?)</p>|"
         r"<ul[^>]*>(.*?)</ul>|"
         r"<ol[^>]*>(.*?)</ol>",
@@ -126,7 +150,15 @@ def parse_blocks(content: str) -> list:
                     }
                 )
             continue
-        for gi in (7, 8, 9, 10):
+        if m.group(7) is not None:
+            body = strip_tags(m.group(7))
+            if body and len(body) > 8:
+                heading = current_h3 or "Worked example"
+                if not heading.lower().startswith("worked"):
+                    heading = f"Worked example — {heading}"
+                blocks.append({"heading": heading, "body": body, "kind": "TIP"})
+            continue
+        for gi in (8, 9, 10, 11):
             if m.group(gi) is not None:
                 body = strip_tags(m.group(gi))
                 if body and len(body) > 8:
@@ -171,7 +203,7 @@ def main():
         raw = f.read()
 
     section_pattern = re.compile(
-        r'<section class="sec" id="([^"]+)"><h2 class="sec-title">([^<]+)</h2>(.*?)</section>',
+        r'<section class="sec" id="([^"]+)"\s*>\s*<h2 class="sec-title">([^<]+)</h2>(.*?)</section>',
         re.DOTALL,
     )
     sections = section_pattern.findall(raw)
@@ -251,14 +283,14 @@ def main():
             if body:
                 subs = [{"heading": "Overview", "body": body[:2000], "kind": "BODY"}]
 
-        for block in subs[:50]:
+        for block in subs[:80]:
             heading = block["heading"]
             body = block.get("body", "")
             kind = block.get("kind", "BODY")
             headers = block.get("table_headers", [])
             rows = block.get("table_rows", [])
-            if body and len(body) > 1800:
-                body = body[:1797] + "..."
+            if body and len(body) > 2500:
+                body = body[:2497] + "..."
             if headers:
                 chapter_lines.append(
                     f"                s({kotlin_str(heading)}, tableHeaders = {kotlin_list_str(headers)}, "

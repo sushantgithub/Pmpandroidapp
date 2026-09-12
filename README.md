@@ -4,7 +4,7 @@ Interactive Android study companion built from **Sushant Kulkarni**'s PMP Exam P
 
 ## What's inside
 
-- **20 chapters** covering exam blueprint, PMBOK 8, knowledge domains, people skills, business environment, agile/scrum, and a full cheat sheet
+- **21 chapters** covering exam blueprint, PMBOK 8, knowledge domains, people skills, business environment, agile/scrum, worked examples, about, and a full cheat sheet
 - **149 practice questions** with explanations — section-wise quizzes plus a mixed exam set
 - **Earned-value formulas** with an interactive EVM calculator
 - **Search** across all study notes
@@ -14,7 +14,7 @@ This project is an independent study resource. **Not affiliated with, endorsed b
 
 ## Download APK
 
-Prebuilt debug APK (Android 8.0+, **v2.1.1**):
+Prebuilt debug APK (Android 8.0+, **v2.2.0**):
 
 https://github.com/sushantgithub/Pmpandroidapp/raw/cursor/pmp-study-android-app-50e4/releases/PMP_Study.apk
 
