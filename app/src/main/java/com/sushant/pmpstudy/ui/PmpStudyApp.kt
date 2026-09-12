@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -45,9 +46,10 @@ fun PmpStudyApp() {
         destination?.route?.startsWith("quiz/take") == true
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (!hideBar) {
-                NavigationBar {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     tabs.forEach { tab ->
                         val selected = destination?.hierarchy?.any { it.route == tab.route } == true
                         NavigationBarItem(
@@ -75,9 +77,7 @@ fun PmpStudyApp() {
             modifier = Modifier.padding(inner)
         ) {
             composable("learn") {
-                LearnScreen(
-                    onOpenChapter = { id -> navController.navigate("chapter/$id") }
-                )
+                LearnScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
             }
             composable(
                 route = "chapter/{id}",

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,10 +23,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.EarnedValueMath
+import com.sushant.pmpstudy.ui.components.ScreenHeader
 import java.util.Locale
 
 @Composable
@@ -34,71 +37,103 @@ fun FormulasScreen() {
     var pv by remember { mutableStateOf("100000") }
     var ac by remember { mutableStateOf("90000") }
     var bac by remember { mutableStateOf("200000") }
-    var output by remember { mutableStateOf("Tap Calculate to score this scenario.") }
+    var metrics by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text("Formulas", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "Work a numeric example, then scan EVM, PERT, channels, EMV, and PTA. Practice until SPI, CPI, and EAC are automatic.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberField("EV", ev, { ev = it }, Modifier.weight(1f))
-            NumberField("PV", pv, { pv = it }, Modifier.weight(1f))
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            ScreenHeader(
+                title = "Formulas",
+                subtitle = "Run an EVM example, then memorize SPI, CPI, EAC, and PERT."
+            )
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("EVM calculator", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField("EV", ev, { ev = it }, Modifier.weight(1f))
+                        NumberField("PV", pv, { pv = it }, Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField("AC", ac, { ac = it }, Modifier.weight(1f))
+                        NumberField("BAC", bac, { bac = it }, Modifier.weight(1f))
+                    }
+                    Button(
+                        onClick = {
+                            runCatching {
+                                val result = EarnedValueMath.compute(
+                                    ev = ev.toDouble(),
+                                    pv = pv.toDouble(),
+                                    ac = ac.toDouble(),
+                                    bac = bac.toDouble()
+                                )
+                                val fmt = { n: Double -> String.format(Locale.US, "%,.2f", n) }
+                                error = null
+                                metrics = listOf(
+                                    "SV" to fmt(result.sv),
+                                    "CV" to fmt(result.cv),
+                                    "SPI" to fmt(result.spi),
+                                    "CPI" to fmt(result.cpi),
+                                    "EAC" to fmt(result.eacTypical),
+                                    "ETC" to fmt(result.etc),
+                                    "VAC" to fmt(result.vac),
+                                    "TCPI" to fmt(result.tcpi)
+                                )
+                            }.onFailure {
+                                metrics = emptyList()
+                                error = "Enter valid EV, PV, AC, and BAC. BAC must differ from AC."
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Calculate") }
+                    if (error != null) {
+                        Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (metrics.isNotEmpty()) {
+                        metrics.chunked(2).forEach { pair ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                pair.forEach { (label, value) ->
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(value, style = MaterialTheme.typography.titleMedium)
+                                    }
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
         }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberField("AC", ac, { ac = it }, Modifier.weight(1f))
-            NumberField("BAC", bac, { bac = it }, Modifier.weight(1f))
-        }
-        Button(
-            onClick = {
-                output = runCatching {
-                    val result = EarnedValueMath.compute(
-                        ev = ev.toDouble(),
-                        pv = pv.toDouble(),
-                        ac = ac.toDouble(),
-                        bac = bac.toDouble()
+        items(StudyRepository.formulas, key = { it.name }) { formula ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(formula.name, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        formula.expression,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 6.dp)
                     )
-                    val fmt = { n: Double -> String.format(Locale.US, "%,.2f", n) }
-                    buildString {
-                        appendLine("SV ${fmt(result.sv)}   CV ${fmt(result.cv)}")
-                        appendLine("SPI ${fmt(result.spi)}   CPI ${fmt(result.cpi)}")
-                        appendLine("EAC (typical) ${fmt(result.eacTypical)}")
-                        appendLine("ETC ${fmt(result.etc)}   VAC ${fmt(result.vac)}")
-                        append("TCPI (to BAC) ${fmt(result.tcpi)}")
-                    }
-                }.getOrElse { "Enter nonzero EV/PV/AC/BAC numbers. BAC must differ from AC." }
-            },
-            modifier = Modifier.padding(top = 12.dp)
-        ) {
-            Text("Calculate")
-        }
-        Text(
-            output,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(vertical = 12.dp)
-        )
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(StudyRepository.formulas, key = { it.name }) { formula ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(Modifier.padding(14.dp)) {
-                        Text(formula.name, style = MaterialTheme.typography.titleSmall)
-                        Text(formula.expression, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
-                        Text(
-                            formula.meaning,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
+                    Text(
+                        formula.meaning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                 }
             }
         }
