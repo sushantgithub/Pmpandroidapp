@@ -20,11 +20,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 
 @Composable
 fun LearnScreen(onOpenChapter: (String) -> Unit) {
+    val versionName = LocalContext.current.packageManager
+        .getPackageInfo(LocalContext.current.packageName, 0).versionName
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = if (query.isBlank()) {
         StudyRepository.chapters
@@ -53,7 +56,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "${StudyRepository.chapters.size} chapters · $quizCount practice questions · PMBOK 8 aligned. Independent study resource — not affiliated with PMI.",
+                "${StudyRepository.chapters.size} chapters · $quizCount practice questions · v$versionName · PMBOK 8 aligned. Not affiliated with PMI.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)

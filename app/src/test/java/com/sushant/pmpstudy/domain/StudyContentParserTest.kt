@@ -1,5 +1,6 @@
 package com.sushant.pmpstudy.domain
 
+import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,5 +34,13 @@ class StudyContentParserTest {
         assertEquals(1, blocks.size)
         val list = blocks[0] as ContentBlock.BulletList
         assertEquals(listOf("First point", "Second point"), list.items)
+    }
+
+    @Test
+    fun catalogExamAtAGlanceHasStructuredTable() {
+        val section = StudyRepository.chapter("blueprint")!!.sections.first()
+        assertTrue(section.hasTable)
+        assertEquals("Item", section.tableHeaders[0])
+        assertTrue(section.tableRows.any { it.firstOrNull() == "Total Questions" })
     }
 }

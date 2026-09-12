@@ -19,42 +19,52 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sushant.pmpstudy.data.Section
 import com.sushant.pmpstudy.domain.ContentBlock
 import com.sushant.pmpstudy.domain.StudyContentParser
 
 @Composable
 fun StudyContentView(
-    body: String,
+    section: Section,
     textColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val blocks = StudyContentParser.parse(body)
     Column(modifier = modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        blocks.forEach { block ->
-            when (block) {
-                is ContentBlock.Paragraph -> Text(
-                    text = block.text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textColor
-                )
-                is ContentBlock.BulletList -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    block.items.forEach { item ->
-                        Row {
-                            Text("• ", style = MaterialTheme.typography.bodyMedium, color = textColor)
-                            Text(
-                                text = item,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = textColor,
-                                modifier = Modifier.weight(1f)
-                            )
+        if (section.hasTable) {
+            StudyTable(
+                headers = section.tableHeaders,
+                rows = section.tableRows,
+                textColor = textColor
+            )
+        }
+        if (section.body.isNotBlank()) {
+            val blocks = StudyContentParser.parse(section.body)
+            blocks.forEach { block ->
+                when (block) {
+                    is ContentBlock.Paragraph -> Text(
+                        text = block.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor
+                    )
+                    is ContentBlock.BulletList -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        block.items.forEach { item ->
+                            Row {
+                                Text("• ", style = MaterialTheme.typography.bodyMedium, color = textColor)
+                                Text(
+                                    text = item,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = textColor,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
+                    is ContentBlock.Table -> StudyTable(
+                        headers = block.headers,
+                        rows = block.rows,
+                        textColor = textColor
+                    )
                 }
-                is ContentBlock.Table -> StudyTable(
-                    headers = block.headers,
-                    rows = block.rows,
-                    textColor = textColor
-                )
             }
         }
     }

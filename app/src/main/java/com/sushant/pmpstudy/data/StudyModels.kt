@@ -4,9 +4,13 @@ enum class SectionKind { BODY, NOTE, TIP, WARN, DANGER, KEY }
 
 data class Section(
     val heading: String,
-    val body: String,
-    val kind: SectionKind = SectionKind.BODY
-)
+    val body: String = "",
+    val kind: SectionKind = SectionKind.BODY,
+    val tableHeaders: List<String> = emptyList(),
+    val tableRows: List<List<String>> = emptyList()
+) {
+    val hasTable: Boolean get() = tableHeaders.isNotEmpty() && tableRows.isNotEmpty()
+}
 
 data class Chapter(
     val id: String,

@@ -71,7 +71,7 @@ fun ChapterDetailScreen(
                 ) {
                     Column(Modifier.padding(14.dp)) {
                         Text(section.heading, style = MaterialTheme.typography.titleSmall, color = colors.second)
-                        StudyContentView(body = section.body, textColor = colors.second)
+                        StudyContentView(section = section, textColor = colors.second)
                     }
                 }
             }

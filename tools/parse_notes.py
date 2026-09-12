@@ -57,8 +57,22 @@ def section_for_pos(raw: str, pos: int, ranges: list) -> str:
     return "blueprint"
 
 
+def parse_table_html(table_html: str):
+    rows = []
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.DOTALL):
+        cells = [strip_tags(c) for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", tr, re.DOTALL)]
+        cells = [c for c in cells if c]
+        if cells:
+            rows.append(cells)
+    if len(rows) < 1:
+        return None
+    return rows[0], rows[1:]
+
+
 def parse_blocks(content: str) -> list:
-    """Split section HTML into ordered content blocks."""
+    """Split section HTML into ordered content blocks.
+    Each block: dict with keys heading, kind, body, table_headers, table_rows.
+    """
     content = re.sub(
         r'<div class="quiz-block">.*?</div>\s*(?=<h[34]|</section>|$)',
         "",
@@ -67,15 +81,15 @@ def parse_blocks(content: str) -> list:
     )
     blocks = []
     pattern = re.compile(
-        r'<h3[^>]*>(.*?)</h3>|'
-        r'<h4[^>]*>(.*?)</h4>|'
+        r"<h3[^>]*>(.*?)</h3>|"
+        r"<h4[^>]*>(.*?)</h4>|"
         r'<div class="callout (\w+)">.*?<div>(.*?)</div></div>|'
         r'<div class="formula-box">(.*?)</div>|'
         r'<div class="tbl-wrap"><table>(.*?)</table></div>|'
         r'<div class="(?:two-col|card-grid|flow|art-box|example-box)[^"]*">(.*?)</div>|'
-        r'<p[^>]*>(.*?)</p>|'
-        r'<ul[^>]*>(.*?)</ul>|'
-        r'<ol[^>]*>(.*?)</ol>',
+        r"<p[^>]*>(.*?)</p>|"
+        r"<ul[^>]*>(.*?)</ul>|"
+        r"<ol[^>]*>(.*?)</ol>",
         re.DOTALL,
     )
     current_h3 = ""
@@ -91,25 +105,65 @@ def parse_blocks(content: str) -> list:
             kind = kind_map.get(m.group(3), "BODY")
             body = strip_tags(m.group(4))
             if body:
-                blocks.append((current_h3 or kind.title(), body, kind))
+                blocks.append({"heading": current_h3 or kind.title(), "body": body, "kind": kind})
             continue
-        for gi in (5, 6, 7, 8, 9, 10):
+        if m.group(5) is not None:
+            body = strip_tags(m.group(5))
+            if body:
+                blocks.append({"heading": current_h3 or "Formula", "body": body, "kind": "BODY"})
+            continue
+        if m.group(6) is not None:
+            parsed = parse_table_html(m.group(6))
+            if parsed:
+                headers, rows = parsed
+                blocks.append(
+                    {
+                        "heading": current_h3 or "Table",
+                        "body": "",
+                        "kind": "BODY",
+                        "table_headers": headers,
+                        "table_rows": rows,
+                    }
+                )
+            continue
+        for gi in (7, 8, 9, 10):
             if m.group(gi) is not None:
                 body = strip_tags(m.group(gi))
                 if body and len(body) > 8:
-                    blocks.append((current_h3 or "Notes", body, "BODY"))
+                    blocks.append({"heading": current_h3 or "Notes", "body": body, "kind": "BODY"})
                 break
 
     merged = []
-    for heading, body, kind in blocks:
-        if not body:
+    for block in blocks:
+        if not block.get("body") and not block.get("table_headers"):
             continue
-        if merged and merged[-1][0] == heading and merged[-1][2] == kind and kind == "BODY":
-            prev_h, prev_b, prev_k = merged[-1]
-            merged[-1] = (prev_h, f"{prev_b}\n\n{body}", prev_k)
+        if (
+            merged
+            and merged[-1]["heading"] == block["heading"]
+            and merged[-1]["kind"] == block["kind"] == "BODY"
+            and not merged[-1].get("table_headers")
+            and not block.get("table_headers")
+        ):
+            merged[-1]["body"] = f"{merged[-1]['body']}\n\n{block['body']}"
         else:
-            merged.append((heading, body, kind))
+            merged.append(block)
     return merged
+
+
+def kotlin_list_str(items) -> str:
+    if not items:
+        return "emptyList()"
+    inner = ", ".join(kotlin_str(str(x)) for x in items)
+    return f"listOf({inner})"
+
+
+def kotlin_table_rows(rows) -> str:
+    if not rows:
+        return "emptyList()"
+    row_strs = []
+    for row in rows:
+        row_strs.append(f"listOf({', '.join(kotlin_str(str(c)) for c in row)})")
+    return "listOf(" + ", ".join(row_strs) + ")"
 
 
 def main():
@@ -166,8 +220,13 @@ def main():
     chapter_lines = [
         "package com.sushant.pmpstudy.data",
         "",
-        "private fun s(heading: String, body: String, kind: SectionKind = SectionKind.BODY) =",
-        "    Section(heading, body, kind)",
+        "private fun s(",
+        "    heading: String,",
+        "    body: String = \"\",",
+        "    kind: SectionKind = SectionKind.BODY,",
+        "    tableHeaders: List<String> = emptyList(),",
+        "    tableRows: List<List<String>> = emptyList()",
+        ") = Section(heading, body, kind, tableHeaders, tableRows)",
         "",
         "object ChapterCatalog {",
         "    val all: List<Chapter> = listOf(",
@@ -190,12 +249,22 @@ def main():
         if not subs:
             body = strip_tags(re.sub(r'<div class="quiz-block">.*', "", content, flags=re.DOTALL))
             if body:
-                subs = [("Overview", body[:2000], "BODY")]
+                subs = [{"heading": "Overview", "body": body[:2000], "kind": "BODY"}]
 
-        for heading, body, kind in subs[:50]:
-            if len(body) > 1800:
+        for block in subs[:50]:
+            heading = block["heading"]
+            body = block.get("body", "")
+            kind = block.get("kind", "BODY")
+            headers = block.get("table_headers", [])
+            rows = block.get("table_rows", [])
+            if body and len(body) > 1800:
                 body = body[:1797] + "..."
-            if kind == "BODY":
+            if headers:
+                chapter_lines.append(
+                    f"                s({kotlin_str(heading)}, tableHeaders = {kotlin_list_str(headers)}, "
+                    f"tableRows = {kotlin_table_rows(rows)}),"
+                )
+            elif kind == "BODY":
                 chapter_lines.append(f"                s({kotlin_str(heading)}, {kotlin_str(body)}),")
             else:
                 chapter_lines.append(
