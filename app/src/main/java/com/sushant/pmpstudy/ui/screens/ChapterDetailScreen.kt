@@ -62,6 +62,7 @@ fun ChapterDetailScreen(
                     SectionKind.TIP -> Color(0xFF134E2E) to Color(0xFFD1FAE5)
                     SectionKind.WARN -> Color(0xFF78350F) to Color(0xFFFEF3C7)
                     SectionKind.DANGER -> Color(0xFF7F1D1D) to Color(0xFFFECACA)
+                    SectionKind.KEY -> Color(0xFF4C1D95) to Color(0xFFEDE9FE)
                 }
                 Card(
                     colors = CardDefaults.cardColors(containerColor = colors.first),

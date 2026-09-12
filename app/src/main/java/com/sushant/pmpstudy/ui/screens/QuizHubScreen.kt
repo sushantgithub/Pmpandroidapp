@@ -29,7 +29,7 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
         item {
             Text("Quizzes", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Start with the mixed set, then drill each chapter after you read it. These are original practice items, not PMI exam questions.",
+                "${StudyRepository.allQuestions.size} practice questions from Sushant's prep guide. Start with the mixed set, then drill each chapter after you read it.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)

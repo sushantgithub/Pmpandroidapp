@@ -40,9 +40,15 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Text("PMP Study", style = MaterialTheme.typography.headlineMedium)
+            Text("PMP® Prep Guide", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "${StudyRepository.chapters.size} chapters · $quizCount practice items · ECO 2021 with PMBOK 8 context. Not affiliated with PMI.",
+                "By Sushant Kulkarni · 2026 ECO Edition",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Text(
+                "${StudyRepository.chapters.size} chapters · $quizCount practice questions · PMBOK 8 aligned. Independent study resource — not affiliated with PMI.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)

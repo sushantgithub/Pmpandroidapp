@@ -1,6 +1,6 @@
 package com.sushant.pmpstudy.data
 
-enum class SectionKind { BODY, NOTE, TIP, WARN, DANGER }
+enum class SectionKind { BODY, NOTE, TIP, WARN, DANGER, KEY }
 
 data class Section(
     val heading: String,

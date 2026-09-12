@@ -52,8 +52,12 @@ class QuizGraderTest {
     }
 
     @Test
-    fun pertQuestionIsSix() {
-        val q = StudyRepository.allQuestions.first { it.id == "sch4" }
-        assertEquals(1, q.correctIndex)
+    fun has149PracticeQuestions() {
+        assertEquals(149, StudyRepository.allQuestions.size)
+    }
+
+    @Test
+    fun has20Chapters() {
+        assertEquals(20, StudyRepository.chapters.size)
     }
 }

@@ -13,7 +13,7 @@ object StudyRepository {
     val mixedExam: QuizPack = QuizPack(
         id = "mixed",
         title = "Mixed exam set",
-        subtitle = "Twenty items drawn across domains, delivery, and math",
+        subtitle = "20 questions across People, Process, Business Environment & Agile",
         questions = QuizBank.mixedTwenty
     )
 
