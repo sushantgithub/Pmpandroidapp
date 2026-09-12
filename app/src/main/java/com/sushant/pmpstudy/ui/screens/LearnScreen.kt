@@ -26,10 +26,15 @@ import com.sushant.pmpstudy.data.StudyRepository
 @Composable
 fun LearnScreen(onOpenChapter: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    val filtered = StudyRepository.chapters.filter { chapter ->
-        val haystack = (chapter.title + chapter.subtitle + chapter.category +
-            chapter.sections.joinToString { it.body }).lowercase()
-        query.isBlank() || haystack.contains(query.lowercase())
+    val filtered = if (query.isBlank()) {
+        StudyRepository.chapters
+    } else {
+        val q = query.lowercase()
+        StudyRepository.chapters.filter { chapter ->
+            val haystack = (chapter.title + chapter.subtitle + chapter.category +
+                chapter.sections.joinToString { it.body }).lowercase()
+            haystack.contains(q)
+        }
     }
     val grouped = filtered.groupBy { it.category }
     val quizCount = StudyRepository.allQuestions.size

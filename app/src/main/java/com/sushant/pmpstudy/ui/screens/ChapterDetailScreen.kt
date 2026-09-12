@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
@@ -55,7 +55,7 @@ fun ChapterDetailScreen(
             item {
                 Text(chapter.subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            items(chapter.sections, key = { it.heading }) { section ->
+            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
                 val colors = when (section.kind) {
                     SectionKind.BODY -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurface
                     SectionKind.NOTE -> Color(0xFF1E3A6E) to Color(0xFFD6E4FF)

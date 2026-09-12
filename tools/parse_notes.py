@@ -100,12 +100,16 @@ def parse_blocks(content: str) -> list:
                     blocks.append((current_h3 or "Notes", body, "BODY"))
                 break
 
-    deduped = []
-    for b in blocks:
-        if deduped and deduped[-1][0] == b[0] and deduped[-1][1] == b[1]:
+    merged = []
+    for heading, body, kind in blocks:
+        if not body:
             continue
-        deduped.append(b)
-    return deduped
+        if merged and merged[-1][0] == heading and merged[-1][2] == kind and kind == "BODY":
+            prev_h, prev_b, prev_k = merged[-1]
+            merged[-1] = (prev_h, f"{prev_b}\n\n{body}", prev_k)
+        else:
+            merged.append((heading, body, kind))
+    return merged
 
 
 def main():
