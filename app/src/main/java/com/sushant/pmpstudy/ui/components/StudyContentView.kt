@@ -2,15 +2,14 @@ package com.sushant.pmpstudy.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -77,39 +76,111 @@ private fun StudyTable(
     textColor: Color
 ) {
     val colCount = maxOf(headers.size, rows.maxOfOrNull { it.size } ?: 0).coerceAtLeast(1)
-    val headerBg = textColor.copy(alpha = 0.15f)
-    val borderColor = textColor.copy(alpha = 0.25f)
-    val evenRowBg = textColor.copy(alpha = 0.06f)
+    val borderColor = textColor.copy(alpha = 0.22f)
+    val headerBg = textColor.copy(alpha = 0.14f)
+    val rowBg = textColor.copy(alpha = 0.05f)
     val shape = RoundedCornerShape(8.dp)
 
-    val scrollState = rememberScrollState()
+    when {
+        colCount == 2 -> KeyValueTable(rows, textColor, borderColor, rowBg, shape)
+        colCount <= 4 -> CompactRowTable(headers, rows, colCount, textColor, borderColor, headerBg, rowBg, shape)
+        else -> WrappedGridTable(headers, rows, colCount, textColor, borderColor, headerBg, rowBg, shape)
+    }
+}
+
+/** Two-column tables: label on top, value below — no horizontal scroll. */
+@Composable
+private fun KeyValueTable(
+    rows: List<List<String>>,
+    textColor: Color,
+    borderColor: Color,
+    rowBg: Color,
+    shape: RoundedCornerShape
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState)
             .clip(shape)
             .border(1.dp, borderColor, shape)
     ) {
-        Row(modifier = Modifier.background(headerBg)) {
-            for (col in 0 until colCount) {
-                TableCell(
-                    text = headers.getOrElse(col) { "" },
-                    textColor = textColor,
-                    bold = true,
-                    minWidth = columnWidth(colCount)
+        rows.forEachIndexed { index, row ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (index % 2 == 0) rowBg else Color.Transparent)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    text = row.getOrElse(0) { "" },
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = textColor
+                )
+                Text(
+                    text = row.getOrElse(1) { "" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor.copy(alpha = 0.92f),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
+            if (index < rows.lastIndex) {
+                HorizontalDivider(color = borderColor, thickness = 0.5.dp)
+            }
         }
+    }
+}
+
+/** 3–4 column tables: each row is a card with labeled fields. */
+@Composable
+private fun CompactRowTable(
+    headers: List<String>,
+    rows: List<List<String>>,
+    colCount: Int,
+    textColor: Color,
+    borderColor: Color,
+    headerBg: Color,
+    rowBg: Color,
+    shape: RoundedCornerShape
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         rows.forEachIndexed { index, row ->
-            Row(
-                modifier = if (index % 2 == 0) Modifier.background(evenRowBg) else Modifier
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .border(1.dp, borderColor, shape)
+                    .background(if (index % 2 == 0) rowBg else Color.Transparent)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                for (col in 0 until colCount) {
-                    TableCell(
-                        text = row.getOrElse(col) { "" },
-                        textColor = textColor,
-                        bold = false,
-                        minWidth = columnWidth(colCount)
+                val title = row.firstOrNull()?.takeIf { it.isNotBlank() }
+                if (title != null && colCount > 2) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                }
+                val dataStart = if (colCount > 2) 1 else 0
+                val chunks = row.drop(dataStart)
+                chunks.forEachIndexed { i, value ->
+                    if (value.isBlank()) return@forEachIndexed
+                    val headerIndex = dataStart + i
+                    val label = headers.getOrElse(headerIndex) { "" }
+                    if (label.isNotBlank()) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = textColor.copy(alpha = 0.75f)
+                        )
+                    }
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textColor,
+                        modifier = Modifier.padding(bottom = if (i < chunks.lastIndex) 2.dp else 0.dp)
                     )
                 }
             }
@@ -117,27 +188,79 @@ private fun StudyTable(
     }
 }
 
+/** Wide tables: equal-weight columns that wrap within screen width. */
 @Composable
-private fun TableCell(
+private fun WrappedGridTable(
+    headers: List<String>,
+    rows: List<List<String>>,
+    colCount: Int,
+    textColor: Color,
+    borderColor: Color,
+    headerBg: Color,
+    rowBg: Color,
+    shape: RoundedCornerShape
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, borderColor, shape)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(headerBg)
+                .padding(vertical = 4.dp)
+        ) {
+            repeat(colCount) { col ->
+                TableCell(
+                    text = headers.getOrElse(col) { "" },
+                    textColor = textColor,
+                    bold = true,
+                    weight = 1f
+                )
+            }
+        }
+        HorizontalDivider(color = borderColor, thickness = 0.5.dp)
+        rows.forEachIndexed { index, row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (index % 2 == 0) rowBg else Color.Transparent)
+                    .padding(vertical = 2.dp)
+            ) {
+                repeat(colCount) { col ->
+                    TableCell(
+                        text = row.getOrElse(col) { "" },
+                        textColor = textColor,
+                        bold = false,
+                        weight = 1f
+                    )
+                }
+            }
+            if (index < rows.lastIndex) {
+                HorizontalDivider(color = borderColor, thickness = 0.5.dp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TableCell(
     text: String,
     textColor: Color,
     bold: Boolean,
-    minWidth: Int
+    weight: Float
 ) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodySmall.copy(
-            fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal
+            fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
+            lineHeight = MaterialTheme.typography.bodySmall.lineHeight
         ),
         color = textColor,
         modifier = Modifier
-            .widthIn(min = minWidth.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .weight(weight)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     )
-}
-
-private fun columnWidth(colCount: Int): Int = when {
-    colCount <= 2 -> 140
-    colCount == 3 -> 120
-    else -> 100
 }
