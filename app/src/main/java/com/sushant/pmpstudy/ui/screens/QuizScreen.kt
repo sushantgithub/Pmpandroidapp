@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ import com.sushant.pmpstudy.domain.QuizGrader
 fun QuizScreen(packId: String, onBack: () -> Unit) {
     val pack = StudyRepository.pack(packId)
     val questions = pack?.questions.orEmpty()
-    val answers = rememberSaveable { mutableStateMapOf<String, Int>() }
+    val answers = remember { mutableStateMapOf<String, Int>() }
     var index by rememberSaveable { mutableIntStateOf(0) }
     var finished by rememberSaveable { mutableStateOf(false) }
 
@@ -67,9 +68,14 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
         }
     ) { inner ->
         if (pack == null) {
-            Text("Quiz not found.", modifier = Modifier.padding(16.dp))
+            Text("Quiz not found.", modifier = Modifier.padding(inner).padding(16.dp))
             return@Scaffold
         }
+        if (questions.isEmpty()) {
+            Text("No questions in this set.", modifier = Modifier.padding(inner).padding(16.dp))
+            return@Scaffold
+        }
+        val safeIndex = index.coerceIn(0, questions.lastIndex)
         if (finished) {
             val result = QuizGrader.grade(questions, answers)
             Column(
@@ -111,10 +117,10 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
             return@Scaffold
         }
 
-        val question = questions[index]
+        val question = questions[safeIndex]
         val selected = answers[question.id]
         val revealed = selected != null
-        val progress = (index + 1f) / questions.size
+        val progress = (safeIndex + 1f) / questions.size
 
         Column(
             modifier = Modifier
@@ -126,7 +132,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
             )
             Text(
-                "Question ${index + 1} of ${questions.size}",
+                "Question ${safeIndex + 1} of ${questions.size}",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -182,20 +188,20 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                if (index > 0) {
+                if (safeIndex > 0) {
                     OutlinedButton(
-                        onClick = { index -= 1 },
+                        onClick = { index = safeIndex - 1 },
                         modifier = Modifier.weight(1f)
                     ) { Text("Previous") }
                 }
                 Button(
                     onClick = {
-                        if (index == questions.lastIndex) finished = true else index += 1
+                        if (safeIndex == questions.lastIndex) finished = true else index = safeIndex + 1
                     },
                     enabled = revealed,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (index == questions.lastIndex) "See score" else "Next")
+                    Text(if (safeIndex == questions.lastIndex) "See score" else "Next")
                 }
             }
         }

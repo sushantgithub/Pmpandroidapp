@@ -57,7 +57,8 @@ class QuizGraderTest {
     }
 
     @Test
-    fun has20Chapters() {
-        assertEquals(20, StudyRepository.chapters.size)
+    fun chapterIdsAreUnique() {
+        val ids = StudyRepository.chapters.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
     }
 }

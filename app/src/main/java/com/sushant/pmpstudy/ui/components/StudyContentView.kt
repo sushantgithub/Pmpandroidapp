@@ -47,7 +47,7 @@ fun StudyContentView(
                     )
                     is ContentBlock.BulletList -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         block.items.forEach { item ->
-                            Row {
+                            Row(Modifier.fillMaxWidth()) {
                                 Text("• ", style = MaterialTheme.typography.bodyMedium, color = textColor)
                                 Text(
                                     text = item,

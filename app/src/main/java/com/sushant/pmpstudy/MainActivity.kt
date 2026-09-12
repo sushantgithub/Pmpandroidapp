@@ -12,7 +12,7 @@ import com.sushant.pmpstudy.ui.theme.PmpStudyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(null)
         val bar = Color(0xFF0B1524).toArgb()
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(bar),

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,8 +38,12 @@ import com.sushant.pmpstudy.ui.components.StatRow
 
 @Composable
 fun LearnScreen(onOpenChapter: (String) -> Unit) {
-    val versionName = LocalContext.current.packageManager
-        .getPackageInfo(LocalContext.current.packageName, 0).versionName
+    val context = LocalContext.current
+    val versionName = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "2.1.1"
+    }
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = if (query.isBlank()) {
         StudyRepository.chapters
@@ -50,6 +56,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = remember { LazyListState() },
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -78,7 +85,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
         if (filtered.isEmpty()) {
             item {
                 Text(
-                    "No chapters match “$query”. Try a topic like EVM, Scrum, or ethics.",
+                    "No chapters match \"$query\". Try a topic like EVM, Scrum, or ethics.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 16.dp)
