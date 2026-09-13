@@ -24,6 +24,8 @@ CATEGORIES = {
     "ethics": "People domain",
     "business": "Business & tailoring",
     "benefits": "Business & tailoring",
+    "external-env": "Business & tailoring",
+    "casestudies": "Start here",
     "ai": "Business & tailoring",
     "tailoring": "Business & tailoring",
     "agile": "Agile & Scrum",
