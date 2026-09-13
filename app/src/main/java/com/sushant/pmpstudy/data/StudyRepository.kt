@@ -4,7 +4,6 @@ object StudyRepository {
     private val chapterOrder = listOf(
         "blueprint",
         "about",
-        "casestudies",
         "pmbok8",
         "integration",
         "scope",
@@ -24,6 +23,7 @@ object StudyRepository {
         "ai",
         "tailoring",
         "agile",
+        "casestudies",
         "cheatsheet"
     )
 
