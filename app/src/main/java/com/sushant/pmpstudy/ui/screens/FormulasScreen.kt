@@ -85,9 +85,13 @@ fun FormulasScreen() {
                                     "VAC" to fmt(result.vac),
                                     "TCPI" to fmt(result.tcpi)
                                 )
-                            }.onFailure {
+                            }.onFailure { e ->
                                 metrics = emptyList()
-                                error = "Enter valid EV, PV, AC, and BAC. BAC must differ from AC."
+                                error = when (e) {
+                                    is IllegalArgumentException -> e.message ?: "Invalid input."
+                                    is NumberFormatException -> "Enter numbers only."
+                                    else -> "Calculation failed. Check inputs."
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth()

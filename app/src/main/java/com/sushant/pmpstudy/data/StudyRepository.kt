@@ -48,19 +48,16 @@ object StudyRepository {
         questions = QuizBank.mixedTwenty
     )
 
-    fun quizPacks(): List<QuizPack> {
-        val sectionPacks = chapters.mapNotNull { chapter ->
-            val qs = questionsForChapter(chapter.id)
-            if (qs.isEmpty()) null
-            else QuizPack(
-                id = chapter.id,
-                title = chapter.title,
-                subtitle = "${qs.size} questions · ${chapter.category}",
-                questions = qs
-            )
-        }
-        return listOf(mixedExam) + sectionPacks
+    val quizPacks: List<QuizPack> = listOf(mixedExam) + chapters.mapNotNull { chapter ->
+        val qs = questionsForChapter(chapter.id)
+        if (qs.isEmpty()) null
+        else QuizPack(
+            id = chapter.id,
+            title = chapter.title,
+            subtitle = "${qs.size} questions · ${chapter.category}",
+            questions = qs
+        )
     }
 
-    fun pack(id: String): QuizPack? = quizPacks().firstOrNull { it.id == id }
+    fun pack(id: String): QuizPack? = quizPacks.firstOrNull { it.id == id }
 }

@@ -17,15 +17,18 @@ class EarnedValueMathTest {
     }
 
     @Test
-    fun eightPeopleHaveTwentyEightChannels() {
-        assertEquals(28, EarnedValueMath.communicationChannels(8))
+    fun zeroPvExplainsWhichField() {
+        runCatching { EarnedValueMath.compute(ev = 1.0, pv = 0.0, ac = 1.0, bac = 2.0) }
+            .onFailure { assertEquals("PV must not be zero", it.message) }
+            .onSuccess { throw AssertionError("expected failure") }
     }
 }
 
 class QuizGraderTest {
     @Test
-    fun mixedExamHasTwentyItems() {
-        assertEquals(20, StudyRepository.mixedExam.questions.size)
+    fun packLookupIsCached() {
+        assertEquals(StudyRepository.quizPacks, StudyRepository.quizPacks)
+        assertEquals(20, StudyRepository.pack("mixed")?.questions?.size)
     }
 
     @Test

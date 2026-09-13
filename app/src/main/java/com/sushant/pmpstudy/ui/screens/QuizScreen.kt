@@ -29,9 +29,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,7 +43,7 @@ import com.sushant.pmpstudy.domain.QuizGrader
 fun QuizScreen(packId: String, onBack: () -> Unit) {
     val pack = StudyRepository.pack(packId)
     val questions = pack?.questions.orEmpty()
-    val answers = remember(packId) { mutableStateMapOf<String, Int>() }
+    var answers by rememberSaveable(packId) { mutableStateOf(mapOf<String, Int>()) }
     var index by rememberSaveable(packId) { mutableIntStateOf(0) }
     var finished by rememberSaveable(packId) { mutableStateOf(false) }
 
@@ -103,7 +101,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 )
                 Button(
                     onClick = {
-                        answers.clear()
+                        answers = emptyMap()
                         index = 0
                         finished = false
                     },
@@ -157,7 +155,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = container),
                         modifier = Modifier.fillMaxWidth().clickable(enabled = !revealed) {
-                            answers[question.id] = choiceIndex
+                            answers = answers + (question.id to choiceIndex)
                         }
                     ) {
                         Text(

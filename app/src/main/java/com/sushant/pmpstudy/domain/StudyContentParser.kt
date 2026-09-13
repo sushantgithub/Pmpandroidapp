@@ -64,6 +64,13 @@ object StudyContentParser {
         return blocks
     }
 
+    /**
+     * Pipe-delimited tables in leftover catalog body strings look like:
+     *   "| \n | ColA | ColB\n | val1 | val2"
+     * A blank first row ("| ") is skipped because parseRow drops empty cells,
+     * so the next non-empty row becomes headers. Structured [Section.tableHeaders]
+     * is the primary table path; this parser is only a fallback.
+     */
     private fun parseRow(line: String): List<String>? {
         val cells = line.trim()
             .removePrefix("|")

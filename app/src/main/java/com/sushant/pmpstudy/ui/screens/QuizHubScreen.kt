@@ -27,7 +27,7 @@ import com.sushant.pmpstudy.ui.components.ScreenHeader
 
 @Composable
 fun QuizHubScreen(onOpenPack: (String) -> Unit) {
-    val packs = StudyRepository.quizPacks()
+    val packs = StudyRepository.quizPacks
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
