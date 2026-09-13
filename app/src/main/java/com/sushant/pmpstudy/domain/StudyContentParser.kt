@@ -26,6 +26,9 @@ object StudyContentParser {
             val trimmed = lines[i].trim()
             when {
                 trimmed.startsWith("|") -> {
+                    // Catalog leftover format: "| \n | HeaderA | HeaderB\n | v1 | v2"
+                    // parseRow drops empty cells, so a blank "| " sentinel is ignored and
+                    // the next row becomes headers. Prefer Section.tableHeaders when present.
                     flushParagraph()
                     val tableRows = mutableListOf<List<String>>()
                     while (i < lines.size && lines[i].trim().startsWith("|")) {
