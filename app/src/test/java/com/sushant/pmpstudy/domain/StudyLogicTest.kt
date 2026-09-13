@@ -55,14 +55,14 @@ class QuizGraderTest {
     }
 
     @Test
-    fun has149PracticeQuestions() {
-        assertEquals(149, StudyRepository.allQuestions.size)
+    fun has171PracticeQuestions() {
+        assertEquals(171, StudyRepository.allQuestions.size)
     }
 
     @Test
-    fun has21ChaptersWithUniqueIds() {
+    fun has23ChaptersWithUniqueIds() {
         val ids = StudyRepository.chapters.map { it.id }
-        assertEquals(21, ids.size)
+        assertEquals(23, ids.size)
         assertEquals(ids.size, ids.toSet().size)
     }
 
@@ -71,7 +71,10 @@ class QuizGraderTest {
         val ids = StudyRepository.chapters.map { it.id }
         assertEquals("blueprint", ids[0])
         assertEquals("about", ids[1])
+        assertEquals("casestudies", ids[2])
         assertEquals("cheatsheet", ids.last())
+        assertTrue("external-env" in ids)
+        assertEquals("external-env", ids[ids.indexOf("benefits") + 1])
         val categories = StudyRepository.chapters.map { it.category }.distinct()
         assertEquals("Start here", categories[0])
         assertEquals("Guide info", categories[1])
@@ -85,5 +88,8 @@ class QuizGraderTest {
             section.heading.startsWith("Worked example")
         }
         assertTrue(examples >= 20)
+        assertEquals(10, StudyRepository.questionsForChapter("casestudies").size)
+        assertEquals(6, StudyRepository.questionsForChapter("external-env").size)
+        assertEquals(12, StudyRepository.questionsForChapter("benefits").size)
     }
 }
