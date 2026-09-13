@@ -78,7 +78,12 @@ class QuizGraderTest {
         val categories = StudyRepository.chapters.map { it.category }.distinct()
         assertEquals("Start here", categories[0])
         assertEquals("Guide info", categories[1])
+        assertEquals("Case study", categories[2])
         assertEquals("Review", categories.last())
+        val grouped = StudyRepository.chapters.groupBy { it.category }
+        assertEquals(listOf("blueprint"), grouped.getValue("Start here").map { it.id })
+        assertEquals(listOf("about"), grouped.getValue("Guide info").map { it.id })
+        assertEquals(listOf("casestudies"), grouped.getValue("Case study").map { it.id })
     }
 
     @Test

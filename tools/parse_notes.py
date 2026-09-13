@@ -25,7 +25,7 @@ CATEGORIES = {
     "business": "Business & tailoring",
     "benefits": "Business & tailoring",
     "external-env": "Business & tailoring",
-    "casestudies": "Start here",
+    "casestudies": "Case study",
     "ai": "Business & tailoring",
     "tailoring": "Business & tailoring",
     "agile": "Agile & Scrum",

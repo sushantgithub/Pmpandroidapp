@@ -317,7 +317,7 @@ internal object ChapterCatalogB {
             "casestudies",
             "📋 Case Study Practice — New 2026 Format",
             "Linked Multi-Question Scenarios · Two Full Case Studies · 10 Questions · Exam Format Simulation",
-            "Start here",
+            "Case study",
             listOf(
                 s("Case Study Format — How It Works", tableHeaders = listOf("Aspect", "Detail"), tableRows = listOf(
                     listOf("What it is", "A 400–600 word scenario followed by 3–6 linked questions. All questions relate to the same project situation."),
