@@ -45,9 +45,9 @@ import com.sushant.pmpstudy.domain.QuizGrader
 fun QuizScreen(packId: String, onBack: () -> Unit) {
     val pack = StudyRepository.pack(packId)
     val questions = pack?.questions.orEmpty()
-    val answers = remember { mutableStateMapOf<String, Int>() }
-    var index by rememberSaveable { mutableIntStateOf(0) }
-    var finished by rememberSaveable { mutableStateOf(false) }
+    val answers = remember(packId) { mutableStateMapOf<String, Int>() }
+    var index by rememberSaveable(packId) { mutableIntStateOf(0) }
+    var finished by rememberSaveable(packId) { mutableStateOf(false) }
 
     Scaffold(
         topBar = {

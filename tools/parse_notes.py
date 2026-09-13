@@ -4,7 +4,7 @@ import html as htmlmod
 import re
 import sys
 
-INPUT = sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/.cursor/projects/workspace/uploads/PMP_Study_Notes_withexample_1d0a.txt"
+INPUT = sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/.cursor/projects/workspace/uploads/PMP_Study_Notes_expandedwithalldetails_9d1e.txt"
 OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else "/workspace/app/src/main/java/com/sushant/pmpstudy/data"
 
 CATEGORIES = {
@@ -102,6 +102,17 @@ def parse_blocks(content: str) -> list:
         return html[:idx] + "<p>" + strip_tags(inner) + "</p>" + html[pos:]
 
     content = replace_balanced_div(content, '<div class="about-card">')
+    for marker in (
+        '<div class="two-col"',
+        '<div class="card-grid"',
+        '<div class="flow"',
+        '<div class="art-box"',
+        '<div class="col-box"',
+    ):
+        guard = 0
+        while marker in content and guard < 40:
+            content = replace_balanced_div(content, marker)
+            guard += 1
     blocks = []
     pattern = re.compile(
         r"<h3[^>]*>(.*?)</h3>|"
@@ -267,8 +278,14 @@ def main():
     for sid, title, content in sections:
         title_clean = strip_tags(title)
         subs = parse_blocks(content)
+        subm = re.search(r'<div class="sec-subtitle">(.*?)</div>', content, re.DOTALL)
         h3m = re.search(r"<h3[^>]*>(.*?)</h3>", content)
-        subtitle = strip_tags(h3m.group(1))[:90] if h3m else f"PMP exam prep · {CATEGORIES.get(sid, 'Study')}"
+        if subm:
+            subtitle = strip_tags(subm.group(1))[:120]
+        elif h3m:
+            subtitle = strip_tags(h3m.group(1))[:90]
+        else:
+            subtitle = f"PMP exam prep · {CATEGORIES.get(sid, 'Study')}"
         category = CATEGORIES.get(sid, "Study")
 
         chapter_lines.append("        Chapter(")
@@ -283,14 +300,14 @@ def main():
             if body:
                 subs = [{"heading": "Overview", "body": body[:2000], "kind": "BODY"}]
 
-        for block in subs[:80]:
+        for block in subs[:120]:
             heading = block["heading"]
             body = block.get("body", "")
             kind = block.get("kind", "BODY")
             headers = block.get("table_headers", [])
             rows = block.get("table_rows", [])
-            if body and len(body) > 2500:
-                body = body[:2497] + "..."
+            if body and len(body) > 3200:
+                body = body[:3197] + "..."
             if headers:
                 chapter_lines.append(
                     f"                s({kotlin_str(heading)}, tableHeaders = {kotlin_list_str(headers)}, "
