@@ -64,6 +64,18 @@ class QuizGraderTest {
     }
 
     @Test
+    fun guideInfoSitsAfterBlueprint() {
+        val ids = StudyRepository.chapters.map { it.id }
+        assertEquals("blueprint", ids[0])
+        assertEquals("about", ids[1])
+        assertEquals("cheatsheet", ids.last())
+        val categories = StudyRepository.chapters.map { it.category }.distinct()
+        assertEquals("Start here", categories[0])
+        assertEquals("Guide info", categories[1])
+        assertEquals("Review", categories.last())
+    }
+
+    @Test
     fun hasWorkedExamplesAndAboutChapter() {
         assertTrue(StudyRepository.chapters.any { it.id == "about" })
         val examples = StudyRepository.chapters.flatMap { it.sections }.count { section ->

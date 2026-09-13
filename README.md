@@ -14,7 +14,7 @@ This project is an independent study resource. **Not affiliated with, endorsed b
 
 ## Download APK
 
-Prebuilt debug APK (Android 8.0+, **v2.3.0**):
+Prebuilt debug APK (Android 8.0+, **v2.3.1**):
 
 https://github.com/sushantgithub/Pmpandroidapp/raw/cursor/pmp-study-android-app-50e4/releases/PMP_Study.apk
 
