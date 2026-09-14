@@ -71,14 +71,33 @@ class QuizGraderTest {
         val ids = StudyRepository.chapters.map { it.id }
         assertEquals("blueprint", ids[0])
         assertEquals("about", ids[1])
-        assertEquals("casestudies", ids[2])
+        assertEquals("pmbok8", ids[2])
+        assertEquals("casestudies", ids[ids.lastIndex - 1])
         assertEquals("cheatsheet", ids.last())
         assertTrue("external-env" in ids)
         assertEquals("external-env", ids[ids.indexOf("benefits") + 1])
         val categories = StudyRepository.chapters.map { it.category }.distinct()
         assertEquals("Start here", categories[0])
         assertEquals("Guide info", categories[1])
+        assertEquals("Case study", categories[categories.lastIndex - 1])
         assertEquals("Review", categories.last())
+        val grouped = StudyRepository.chapters.groupBy { it.category }
+        assertEquals(listOf("blueprint"), grouped.getValue("Start here").map { it.id })
+        assertEquals(listOf("about"), grouped.getValue("Guide info").map { it.id })
+        assertEquals(listOf("casestudies"), grouped.getValue("Case study").map { it.id })
+    }
+
+    @Test
+    fun caseStudyQuestionsSplitIntoTwoGroups() {
+        val (caseOne, caseTwo) = StudyRepository.caseStudyQuestionGroups()
+        assertEquals(6, caseOne.size)
+        assertEquals(4, caseTwo.size)
+        assertTrue(caseOne.all { it.prompt.contains("Case Study 1") })
+        assertTrue(caseTwo.all { it.prompt.contains("Case Study 2") })
+        assertEquals("q162", caseOne.first().id)
+        assertEquals("q167", caseOne.last().id)
+        assertEquals("q168", caseTwo.first().id)
+        assertEquals("q171", caseTwo.last().id)
     }
 
     @Test

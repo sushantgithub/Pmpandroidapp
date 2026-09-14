@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,8 +82,7 @@ private fun StudyTable(
 
     when {
         colCount == 2 -> KeyValueTable(rows, textColor, borderColor, rowBg, shape)
-        colCount <= 4 -> CompactRowTable(headers, rows, colCount, textColor, borderColor, headerBg, rowBg, shape)
-        else -> WrappedGridTable(headers, rows, colCount, textColor, borderColor, headerBg, rowBg, shape)
+        else -> CompactRowTable(headers, rows, colCount, textColor, borderColor, headerBg, rowBg, shape)
     }
 }
 
@@ -163,12 +161,14 @@ private fun CompactRowTable(
                         color = textColor
                     )
                 }
-                val dataStart = if (colCount > 2) 1 else 0
+                val dataStart = if (colCount > 2 && title != null) 1 else 0
                 val chunks = row.drop(dataStart)
                 chunks.forEachIndexed { i, value ->
                     if (value.isBlank()) return@forEachIndexed
                     val headerIndex = dataStart + i
-                    val label = headers.getOrElse(headerIndex) { "" }
+                    val label = headers.getOrElse(headerIndex) { "" }.ifBlank {
+                        if (colCount == 2) headers.getOrElse(i) { "" } else ""
+                    }
                     if (label.isNotBlank()) {
                         Text(
                             text = label,
@@ -186,81 +186,4 @@ private fun CompactRowTable(
             }
         }
     }
-}
-
-/** Wide tables: equal-weight columns that wrap within screen width. */
-@Composable
-private fun WrappedGridTable(
-    headers: List<String>,
-    rows: List<List<String>>,
-    colCount: Int,
-    textColor: Color,
-    borderColor: Color,
-    headerBg: Color,
-    rowBg: Color,
-    shape: RoundedCornerShape
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .border(1.dp, borderColor, shape)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(headerBg)
-                .padding(vertical = 4.dp)
-        ) {
-            repeat(colCount) { col ->
-                TableCell(
-                    text = headers.getOrElse(col) { "" },
-                    textColor = textColor,
-                    bold = true,
-                    weight = 1f
-                )
-            }
-        }
-        HorizontalDivider(color = borderColor, thickness = 0.5.dp)
-        rows.forEachIndexed { index, row ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (index % 2 == 0) rowBg else Color.Transparent)
-                    .padding(vertical = 2.dp)
-            ) {
-                repeat(colCount) { col ->
-                    TableCell(
-                        text = row.getOrElse(col) { "" },
-                        textColor = textColor,
-                        bold = false,
-                        weight = 1f
-                    )
-                }
-            }
-            if (index < rows.lastIndex) {
-                HorizontalDivider(color = borderColor, thickness = 0.5.dp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.TableCell(
-    text: String,
-    textColor: Color,
-    bold: Boolean,
-    weight: Float
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall.copy(
-            fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-            lineHeight = MaterialTheme.typography.bodySmall.lineHeight
-        ),
-        color = textColor,
-        modifier = Modifier
-            .weight(weight)
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-    )
 }

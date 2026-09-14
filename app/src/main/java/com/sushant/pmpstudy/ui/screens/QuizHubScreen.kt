@@ -29,45 +29,51 @@ import com.sushant.pmpstudy.ui.components.ScreenHeader
 fun QuizHubScreen(onOpenPack: (String) -> Unit) {
     val packs = StudyRepository.quizPacks
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier      = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
             ScreenHeader(
-                title = "Practice quizzes",
-                subtitle = "${StudyRepository.allQuestions.size} original questions. Start with the mixed set, then drill a chapter."
+                title    = "Practice quizzes",
+                subtitle = "${StudyRepository.allQuestions.size} questions · Start with the mixed set, then drill by chapter."
             )
         }
         items(packs, key = { it.id }) { pack ->
             val featured = pack.id == "mixed"
             Card(
-                modifier = Modifier.fillMaxWidth().clickable { onOpenPack(pack.id) },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (featured) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    else MaterialTheme.colorScheme.surfaceVariant
-                )
+                modifier  = Modifier.fillMaxWidth().clickable { onOpenPack(pack.id) },
+                colors    = CardDefaults.cardColors(
+                    containerColor = if (featured)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = if (featured) 3.dp else 1.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier          = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
                         if (featured) {
-                            KindBadge("START HERE", modifier = Modifier.padding(bottom = 8.dp))
+                            KindBadge(
+                                label    = "⭐  START HERE",
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
                         }
                         Text(pack.title, style = MaterialTheme.typography.titleMedium)
                         Text(
                             pack.subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style    = MaterialTheme.typography.bodySmall,
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                     Icon(
                         Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        contentDescription = "Open",
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

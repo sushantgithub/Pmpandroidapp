@@ -5,6 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.sushant.pmpstudy.ui.PmpStudyApp
@@ -13,14 +19,27 @@ import com.sushant.pmpstudy.ui.theme.PmpStudyTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val bar = Color(0xFF0B1524).toArgb()
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(bar),
-            navigationBarStyle = SystemBarStyle.dark(bar)
-        )
         setContent {
-            PmpStudyTheme {
-                PmpStudyApp()
+            val systemDark = isSystemInDarkTheme()
+            // null = follow system, true = forced dark, false = forced light
+            var themeOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            val darkTheme = themeOverride ?: systemDark
+
+            val darkBar = Color(0xFF0B1524).toArgb()
+            val lightBar = Color(0xFFF5F7FA).toArgb()
+            SideEffect {
+                enableEdgeToEdge(
+                    statusBarStyle = if (darkTheme) SystemBarStyle.dark(darkBar)
+                    else SystemBarStyle.light(lightBar, darkBar),
+                    navigationBarStyle = if (darkTheme) SystemBarStyle.dark(darkBar)
+                    else SystemBarStyle.light(lightBar, darkBar)
+                )
+            }
+            PmpStudyTheme(darkTheme = darkTheme) {
+                PmpStudyApp(
+                    darkTheme = darkTheme,
+                    onToggleTheme = { themeOverride = !darkTheme }
+                )
             }
         }
     }
