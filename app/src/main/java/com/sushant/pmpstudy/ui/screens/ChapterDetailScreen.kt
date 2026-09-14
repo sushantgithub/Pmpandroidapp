@@ -41,10 +41,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,8 +70,6 @@ fun ChapterDetailScreen(
     val quizCount  = StudyRepository.questionsForChapter(chapterId).size
     val listState  = remember { LazyListState() }
     val scope      = rememberCoroutineScope()
-    var tocVisible by remember { mutableStateOf(true) }
-
     // Scroll to bookmarked section on open (header=0, toc=1 if present, sections start at offset)
     val hasToc = (chapter?.sections?.size ?: 0) > 3
     LaunchedEffect(initialSection) {
@@ -208,7 +204,7 @@ fun ChapterDetailScreen(
             }
 
             // Table of contents chips
-            if (toc.size > 3 && tocVisible) {
+            if (toc.size > 3) {
                 item {
                     Text(
                         "Jump to",
@@ -223,7 +219,6 @@ fun ChapterDetailScreen(
                                 onClick  = {
                                     scope.launch {
                                         listState.animateScrollToItem(pair.second + 2)
-                                        tocVisible = false
                                     }
                                 },
                                 label = {
