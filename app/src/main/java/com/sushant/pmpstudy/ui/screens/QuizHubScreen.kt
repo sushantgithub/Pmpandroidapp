@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.domain.AppState
+import com.sushant.pmpstudy.ui.components.BadgeVariant
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScreenHeader
 
@@ -29,7 +31,7 @@ import com.sushant.pmpstudy.ui.components.ScreenHeader
 fun QuizHubScreen(onOpenPack: (String) -> Unit) {
     val packs = StudyRepository.quizPacks
     LazyColumn(
-        modifier      = Modifier.fillMaxSize(),
+        modifier       = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -40,7 +42,8 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
             )
         }
         items(packs, key = { it.id }) { pack ->
-            val featured = pack.id == "mixed"
+            val featured    = pack.id == "mixed"
+            val lastResult  = AppState.lastResult(pack.id)
             Card(
                 modifier  = Modifier.fillMaxWidth().clickable { onOpenPack(pack.id) },
                 colors    = CardDefaults.cardColors(
@@ -69,6 +72,28 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
                         )
+                        // Quiz history: show last attempt score
+                        if (lastResult != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                KindBadge(
+                                    label   = "Last: ${lastResult.percent}%",
+                                    variant = when {
+                                        lastResult.percent >= 80 -> BadgeVariant.SUCCESS
+                                        lastResult.percent >= 60 -> BadgeVariant.WARNING
+                                        else                     -> BadgeVariant.ERROR
+                                    }
+                                )
+                                Text(
+                                    "${lastResult.correct}/${lastResult.total} · ${lastResult.date}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                     Icon(
                         Icons.AutoMirrored.Outlined.KeyboardArrowRight,

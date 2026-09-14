@@ -3,6 +3,7 @@ package com.sushant.pmpstudy.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
@@ -29,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.sushant.pmpstudy.ui.screens.BookmarksScreen
 import com.sushant.pmpstudy.ui.screens.ChapterDetailScreen
 import com.sushant.pmpstudy.ui.screens.FormulasScreen
 import com.sushant.pmpstudy.ui.screens.LearnScreen
@@ -40,7 +42,8 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab("learn", "Learn", Icons.AutoMirrored.Outlined.MenuBook),
     Tab("formulas", "Formulas", Icons.Outlined.Calculate),
-    Tab("quiz", "Quiz", Icons.Outlined.Quiz)
+    Tab("quiz", "Quiz", Icons.Outlined.Quiz),
+    Tab("bookmarks", "Bookmarks", Icons.Outlined.Bookmark)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,6 +134,9 @@ fun PmpStudyApp(
             ) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 QuizScreen(packId = id, onBack = { navController.popBackStack() })
+            }
+            composable("bookmarks") {
+                BookmarksScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
             }
         }
     }

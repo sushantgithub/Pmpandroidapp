@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -19,6 +20,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,27 +30,27 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.sushant.pmpstudy.data.Section
 import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
-import com.sushant.pmpstudy.ui.components.InlineQuizSection
+import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
 import com.sushant.pmpstudy.ui.theme.calloutColors
@@ -55,21 +59,35 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChapterDetailScreen(
-    chapterId: String,
-    onBack: () -> Unit,
-    onQuiz: () -> Unit
+    chapterId : String,
+    onBack    : () -> Unit,
+    onQuiz    : () -> Unit
 ) {
-    val chapter = StudyRepository.chapter(chapterId)
-    val quizCount = StudyRepository.questionsForChapter(chapterId).size
-    val isCaseStudyChapter = chapterId == "casestudies"
-    val caseStudyGroups = remember(isCaseStudyChapter) {
-        if (isCaseStudyChapter) StudyRepository.caseStudyQuestionGroups() else null
+    val chapter    = StudyRepository.chapter(chapterId)
+    val quizCount  = StudyRepository.questionsForChapter(chapterId).size
+    val listState  = remember { LazyListState() }
+    val scope      = rememberCoroutineScope()
+    val dark       = isSystemInDarkTheme()
+    val callouts   = calloutColors(dark)
+    val isRead     = AppState.isRead(chapterId)
+
+    // ── Reading progress ──────────────────────────────────────────────────
+    val totalItems = 1 + // header item
+        (if ((chapter?.sections?.size ?: 0) > 3) 1 else 0) + // toc item
+        (chapter?.sections?.size ?: 0)
+
+    val readingProgress by remember(listState) {
+        derivedStateOf {
+            if (totalItems <= 1) 1f
+            else (listState.firstVisibleItemIndex.toFloat() / (totalItems - 1)).coerceIn(0f, 1f)
+        }
     }
-    var inlineAnswers by rememberSaveable(chapterId) { mutableStateOf(mapOf<String, Int>()) }
-    val listState = remember { LazyListState() }
-    val scope = rememberCoroutineScope()
-    val dark = isSystemInDarkTheme()
-    val callouts = calloutColors(dark)
+
+    // Auto-mark as read when scrolled past 80%
+    if (readingProgress >= 0.80f && chapter != null) {
+        AppState.markRead(chapterId)
+    }
+
     val toc = remember(chapter) {
         chapter?.sections
             ?.mapIndexed { index, section -> section.heading to index }
@@ -93,22 +111,57 @@ fun ChapterDetailScreen(
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    if (isRead) {
+                        Icon(
+                            Icons.Outlined.CheckCircle,
+                            contentDescription = "Marked as read",
+                            tint     = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(end = 12.dp).size(20.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor    = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
         bottomBar = {
-            if (quizCount > 0 && chapter != null && !isCaseStudyChapter) {
-                Box(
+            if (chapter != null) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = onQuiz, modifier = Modifier.fillMaxWidth()) {
-                        Text("Practice $quizCount questions")
+                    // Reading progress bar above bottom buttons
+                    LinearProgressIndicator(
+                        progress     = { readingProgress },
+                        modifier     = Modifier.fillMaxWidth(),
+                        color        = MaterialTheme.colorScheme.secondary,
+                        trackColor   = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Mark read / unread toggle
+                        OutlinedButton(
+                            onClick  = {
+                                if (isRead) AppState.markUnread(chapterId)
+                                else AppState.markRead(chapterId)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(if (isRead) "Mark unread" else "Mark as read")
+                        }
+                        if (quizCount > 0) {
+                            Button(
+                                onClick  = onQuiz,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Practice $quizCount Qs")
+                            }
+                        }
                     }
                 }
             }
@@ -119,9 +172,9 @@ fun ChapterDetailScreen(
             return@Scaffold
         }
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(inner),
-            state = listState,
-            contentPadding = PaddingValues(16.dp),
+            modifier            = Modifier.fillMaxSize().padding(inner),
+            state               = listState,
+            contentPadding      = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -132,24 +185,26 @@ fun ChapterDetailScreen(
                 )
                 Text(
                     "${chapter.category} · ${chapter.sections.size} notes",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
-            if (!isCaseStudyChapter && toc.size > 3) {
+
+            // Table of contents chips
+            if (toc.size > 3) {
                 item {
                     Text(
                         "Jump to",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         itemsIndexed(toc, key = { i, pair -> "${pair.second}-$i" }) { _, pair ->
                             FilterChip(
                                 selected = false,
-                                onClick = {
+                                onClick  = {
                                     scope.launch {
                                         listState.animateScrollToItem(pair.second + 2)
                                     }
@@ -166,110 +221,83 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-            if (isCaseStudyChapter && caseStudyGroups != null) {
-                val introSections = chapter.sections.filterNot { it.isCaseStudyScenario() }
-                val caseStudyOne = chapter.sections.firstOrNull { it.heading.startsWith("Case Study 1") }
-                val caseStudyTwo = chapter.sections.firstOrNull { it.heading.startsWith("Case Study 2") }
-                val (caseOneQuestions, caseTwoQuestions) = caseStudyGroups
 
-                itemsIndexed(introSections, key = { index, _ -> "intro-$index" }) { _, section ->
-                    ChapterSectionCard(section = section, callouts = callouts, dark = dark)
+            itemsIndexed(chapter.sections, key = { idx, _ -> "${chapter.id}-$idx" }) { sectionIdx, section ->
+                val bookmarked = AppState.isBookmarked(chapterId, sectionIdx)
+
+                val (bg, fg, accent, badge) = when (section.kind) {
+                    SectionKind.BODY   -> Quad(
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.onSurface,
+                        MaterialTheme.colorScheme.primary,
+                        null
+                    )
+                    SectionKind.NOTE   -> Quad(callouts.note,   if (dark) Color(0xFFD6E4FF) else Color(0xFF1A3A6E), Color(0xFF7EB6FF), "NOTE")
+                    SectionKind.TIP    -> Quad(callouts.tip,    if (dark) Color(0xFFD1FAE5) else Color(0xFF155742), Color(0xFF3DDC97), "TIP")
+                    SectionKind.WARN   -> Quad(callouts.warn,   if (dark) Color(0xFFFEF3C7) else Color(0xFF6B4200), Color(0xFFE8C547), "WATCH")
+                    SectionKind.DANGER -> Quad(callouts.danger, if (dark) Color(0xFFFECACA) else Color(0xFF7A1E2A), Color(0xFFFF8A8A), "EXAM TRAP")
+                    SectionKind.KEY    -> Quad(callouts.key,    if (dark) Color(0xFFEDE9FE) else Color(0xFF3B2A6B), Color(0xFFC4B5FD), "KEY")
                 }
-                if (caseStudyOne != null) {
-                    item(key = "case-study-1") {
-                        ChapterSectionCard(section = caseStudyOne, callouts = callouts, dark = dark)
-                    }
-                    item(key = "case-study-1-quiz") {
-                        InlineQuizSection(
-                            title = "Practice questions — Case Study 1",
-                            questions = caseOneQuestions,
-                            answers = inlineAnswers,
-                            onAnswer = { questionId, choiceIndex ->
-                                inlineAnswers = inlineAnswers + (questionId to choiceIndex)
-                            }
+                Card(
+                    colors    = CardDefaults.cardColors(containerColor = bg),
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Row(Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 12.dp)
+                                .width(4.dp)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(accent)
                         )
-                    }
-                }
-                if (caseStudyTwo != null) {
-                    item(key = "case-study-2") {
-                        ChapterSectionCard(section = caseStudyTwo, callouts = callouts, dark = dark)
-                    }
-                    item(key = "case-study-2-quiz") {
-                        InlineQuizSection(
-                            title = "Practice questions — Case Study 2",
-                            questions = caseTwoQuestions,
-                            answers = inlineAnswers,
-                            onAnswer = { questionId, choiceIndex ->
-                                inlineAnswers = inlineAnswers + (questionId to choiceIndex)
+                        Column(Modifier.padding(14.dp).weight(1f)) {
+                            Row(
+                                modifier          = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    if (badge != null) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            KindBadge(badge)
+                                        }
+                                    }
+                                    Text(
+                                        section.heading,
+                                        style    = MaterialTheme.typography.titleSmall,
+                                        color    = fg,
+                                        modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
+                                    )
+                                }
+                                // Bookmark toggle icon
+                                IconButton(
+                                    onClick  = { AppState.toggleBookmark(chapterId, sectionIdx) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector        = if (bookmarked) Icons.Outlined.Bookmark
+                                                             else Icons.Outlined.BookmarkBorder,
+                                        contentDescription = if (bookmarked) "Remove bookmark" else "Bookmark",
+                                        tint               = if (bookmarked) MaterialTheme.colorScheme.primary
+                                                             else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier           = Modifier.size(18.dp)
+                                    )
+                                }
                             }
-                        )
+                            StudyContentView(section = section, textColor = fg)
+                        }
                     }
-                }
-            } else {
-                itemsIndexed(chapter.sections, key = { idx, _ -> "${chapter.id}-$idx" }) { _, section ->
-                    ChapterSectionCard(section = section, callouts = callouts, dark = dark)
                 }
             }
         }
     }
 }
-
-@Composable
-private fun ChapterSectionCard(
-    section: Section,
-    callouts: com.sushant.pmpstudy.ui.theme.CalloutColors,
-    dark: Boolean
-) {
-    val (bg, fg, accent, badge) = when (section.kind) {
-        SectionKind.BODY -> Quad(
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurface,
-            MaterialTheme.colorScheme.primary,
-            null
-        )
-        SectionKind.NOTE -> Quad(callouts.note, if (dark) Color(0xFFD6E4FF) else Color(0xFF1A3A6E), Color(0xFF7EB6FF), "NOTE")
-        SectionKind.TIP -> Quad(callouts.tip, if (dark) Color(0xFFD1FAE5) else Color(0xFF155742), Color(0xFF3DDC97), "TIP")
-        SectionKind.WARN -> Quad(callouts.warn, if (dark) Color(0xFFFEF3C7) else Color(0xFF6B4200), Color(0xFFE8C547), "WATCH")
-        SectionKind.DANGER -> Quad(callouts.danger, if (dark) Color(0xFFFECACA) else Color(0xFF7A1E2A), Color(0xFFFF8A8A), "EXAM TRAP")
-        SectionKind.KEY -> Quad(callouts.key, if (dark) Color(0xFFEDE9FE) else Color(0xFF3B2A6B), Color(0xFFC4B5FD), "KEY")
-    }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = bg),
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .width(4.dp)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(accent)
-            )
-            Column(Modifier.padding(14.dp).weight(1f)) {
-                if (badge != null) {
-                    KindBadge(badge)
-                }
-                Text(
-                    section.heading,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = fg,
-                    modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
-                )
-                StudyContentView(section = section, textColor = fg)
-            }
-        }
-    }
-}
-
-private fun Section.isCaseStudyScenario(): Boolean =
-    heading.startsWith("Case Study 1") || heading.startsWith("Case Study 2")
 
 private data class Quad(
-    val bg: Color,
-    val fg: Color,
-    val accent: Color,
-    val badge: String?
+    val bg     : Color,
+    val fg     : Color,
+    val accent : Color,
+    val badge  : String?
 )
