@@ -28,53 +28,53 @@ import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScreenHeader
 
 private data class BookmarkItem(
-    val chapterId: String,
-    val chapterTitle: String,
-    val sectionIdx: Int,
-    val heading: String,
-    val body: String
+    val chapterId    : String,
+    val chapterTitle : String,
+    val sectionIdx   : Int,
+    val heading      : String,
+    val body         : String
 )
 
 @Composable
-fun BookmarksScreen(onOpenChapter: (String) -> Unit) {
+fun BookmarksScreen(onOpenChapter: (String, Int) -> Unit) {
     // Build list from AppState bookmarks + repository data
     val items: List<BookmarkItem> = AppState.bookmarkedKeys.mapNotNull { key ->
         val parts = key.split("::")
         if (parts.size != 2) return@mapNotNull null
-        val chapterId = parts[0]
+        val chapterId  = parts[0]
         val sectionIdx = parts[1].toIntOrNull() ?: return@mapNotNull null
-        val chapter = StudyRepository.chapter(chapterId) ?: return@mapNotNull null
-        val section = chapter.sections.getOrNull(sectionIdx) ?: return@mapNotNull null
+        val chapter    = StudyRepository.chapter(chapterId) ?: return@mapNotNull null
+        val section    = chapter.sections.getOrNull(sectionIdx) ?: return@mapNotNull null
         BookmarkItem(
-            chapterId = chapterId,
+            chapterId    = chapterId,
             chapterTitle = chapter.title,
-            sectionIdx = sectionIdx,
-            heading = section.heading,
-            body = section.body.take(120).let { if (section.body.length > 120) "$it…" else it }
+            sectionIdx   = sectionIdx,
+            heading      = section.heading,
+            body         = section.body.take(120).let { if (section.body.length > 120) "$it…" else it }
         )
     }.sortedBy { it.chapterTitle }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier       = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
             ScreenHeader(
-                title = "Bookmarks",
+                title    = "Bookmarks",
                 subtitle = if (items.isEmpty()) "Tap the bookmark icon on any section to save it here."
-                else "${items.size} saved section${if (items.size == 1) "" else "s"}"
+                           else "${items.size} saved section${if (items.size == 1) "" else "s"}"
             )
         }
 
         if (items.isEmpty()) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(20.dp),
+                        modifier          = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -95,27 +95,27 @@ fun BookmarksScreen(onOpenChapter: (String) -> Unit) {
 
         items(items, key = { "${it.chapterId}::${it.sectionIdx}" }) { item ->
             Card(
-                modifier = Modifier
+                modifier  = Modifier
                     .fillMaxWidth()
-                    .clickable { onOpenChapter(item.chapterId) },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    .clickable { onOpenChapter(item.chapterId, item.sectionIdx) },
+                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
                         KindBadge(
-                            label = item.chapterTitle,
+                            label    = item.chapterTitle,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
                         Text(item.heading, style = MaterialTheme.typography.titleSmall)
                         if (item.body.isNotBlank()) {
                             Text(
                                 item.body,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style    = MaterialTheme.typography.bodySmall,
+                                color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 4.dp),
                                 maxLines = 2
                             )
@@ -124,8 +124,8 @@ fun BookmarksScreen(onOpenChapter: (String) -> Unit) {
                     Icon(
                         Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                         contentDescription = "Open chapter",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 8.dp)
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier           = Modifier.padding(start = 8.dp)
                     )
                 }
             }

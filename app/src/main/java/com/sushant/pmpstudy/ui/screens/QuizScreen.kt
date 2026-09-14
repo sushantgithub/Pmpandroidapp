@@ -17,8 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.TimerOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,12 +40,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.QuizGrader
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,22 +58,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     var finished  by rememberSaveable(packId) { mutableStateOf(false) }
     var skipped   by rememberSaveable(packId) { mutableStateOf(setOf<String>()) }
     var reviewingSkipped by rememberSaveable(packId) { mutableStateOf(false) }
-    var timedMode by rememberSaveable(packId) { mutableStateOf(false) }
-    // seconds per question ≈ 72s (PMP pace: 230 Qs / 4 hrs)
-    val totalSeconds = questions.size * 72
-    var secondsLeft by rememberSaveable(packId) { mutableIntStateOf(totalSeconds) }
-    var timerStarted by rememberSaveable(packId) { mutableStateOf(false) }
-
-    // Countdown ticker
-    if (timedMode && timerStarted && !finished) {
-        LaunchedEffect(timedMode, timerStarted) {
-            while (secondsLeft > 0 && !finished) {
-                delay(1000L)
-                secondsLeft--
-            }
-            if (secondsLeft == 0) finished = true
-        }
-    }
+    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         topBar = {
@@ -87,35 +71,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    if (!finished) {
-                        if (timedMode && timerStarted) {
-                            val mins = secondsLeft / 60
-                            val secs = secondsLeft % 60
-                            val timerColor = if (secondsLeft < 120)
-                                MaterialTheme.colorScheme.error
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            Text(
-                                "%d:%02d".format(mins, secs),
-                                style    = MaterialTheme.typography.labelLarge,
-                                color    = timerColor,
-                                modifier = Modifier.padding(end = 4.dp)
-                            )
-                        }
-                        IconButton(onClick = {
-                            timedMode = !timedMode
-                            if (timedMode) timerStarted = true
-                        }) {
-                            Icon(
-                                imageVector        = if (timedMode) Icons.Outlined.Timer else Icons.Outlined.TimerOff,
-                                contentDescription = if (timedMode) "Disable timer" else "Enable timer",
-                                tint               = if (timedMode) MaterialTheme.colorScheme.primary
-                                                     else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
+                actions = {},
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor    = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
@@ -228,7 +184,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); secondsLeft = totalSeconds; timerStarted = false },
+                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(
@@ -249,9 +205,6 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
         val revealed    = selected != null
         val isSkipped   = question.id in skipped
         val progress    = (safeIndex + 1f) / activeQuestions.size
-
-        // Start timer on first interaction
-        if (!timerStarted && timedMode) timerStarted = true
 
         Column(modifier = Modifier.padding(inner).fillMaxSize()) {
             LinearProgressIndicator(
@@ -308,6 +261,11 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                         elevation = CardDefaults.cardElevation(defaultElevation = if (!revealed) 1.dp else 0.dp),
                         modifier  = Modifier.fillMaxWidth().clickable(enabled = !revealed) {
                             answers = answers + (question.id to choiceIndex)
+                            if (choiceIndex == question.correctIndex) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            } else {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
                             // Auto-remove from skipped when answered
                             if (question.id in skipped) skipped = skipped - question.id
                         }

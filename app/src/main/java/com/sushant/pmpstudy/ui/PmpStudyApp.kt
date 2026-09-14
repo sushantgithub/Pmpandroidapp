@@ -40,17 +40,17 @@ import com.sushant.pmpstudy.ui.screens.QuizScreen
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
-    Tab("learn", "Learn", Icons.AutoMirrored.Outlined.MenuBook),
-    Tab("formulas", "Formulas", Icons.Outlined.Calculate),
-    Tab("quiz", "Quiz", Icons.Outlined.Quiz),
+    Tab("learn",     "Learn",     Icons.AutoMirrored.Outlined.MenuBook),
+    Tab("formulas",  "Formulas",  Icons.Outlined.Calculate),
+    Tab("quiz",      "Quiz",      Icons.Outlined.Quiz),
     Tab("bookmarks", "Bookmarks", Icons.Outlined.Bookmark)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PmpStudyApp(
-    darkTheme: Boolean = true,
-    onToggleTheme: () -> Unit = {}
+    darkTheme     : Boolean = true,
+    onToggleTheme : () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -67,11 +67,11 @@ fun PmpStudyApp(
                     actions = {
                         IconButton(onClick = onToggleTheme) {
                             Icon(
-                                imageVector = if (darkTheme) Icons.Outlined.LightMode
-                                else Icons.Outlined.DarkMode,
+                                imageVector        = if (darkTheme) Icons.Outlined.LightMode
+                                                     else Icons.Outlined.DarkMode,
                                 contentDescription = if (darkTheme) "Switch to light mode"
-                                else "Switch to dark mode",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                     else "Switch to dark mode",
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     },
@@ -88,16 +88,16 @@ fun PmpStudyApp(
                         val selected = destination?.hierarchy?.any { it.route == tab.route } == true
                         NavigationBarItem(
                             selected = selected,
-                            onClick = {
+                            onClick  = {
                                 navController.navigate(tab.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = false
                                     }
                                     launchSingleTop = true
-                                    restoreState = false
+                                    restoreState    = false
                                 }
                             },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            icon  = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { Text(tab.label) }
                         )
                     }
@@ -106,22 +106,27 @@ fun PmpStudyApp(
         }
     ) { inner ->
         NavHost(
-            navController = navController,
+            navController    = navController,
             startDestination = "learn",
-            modifier = Modifier.padding(inner)
+            modifier         = Modifier.padding(inner)
         ) {
             composable("learn") {
                 LearnScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
             }
             composable(
-                route = "chapter/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType })
+                route     = "chapter/{id}?section={section}",
+                arguments = listOf(
+                    navArgument("id")      { type = NavType.StringType },
+                    navArgument("section") { type = NavType.IntType; defaultValue = -1 }
+                )
             ) { entry ->
-                val id = entry.arguments?.getString("id").orEmpty()
+                val id      = entry.arguments?.getString("id").orEmpty()
+                val section = entry.arguments?.getInt("section") ?: -1
                 ChapterDetailScreen(
-                    chapterId = id,
-                    onBack = { navController.popBackStack() },
-                    onQuiz = { navController.navigate("quiz/take/$id") }
+                    chapterId      = id,
+                    initialSection = section,
+                    onBack         = { navController.popBackStack() },
+                    onQuiz         = { navController.navigate("quiz/take/$id") }
                 )
             }
             composable("formulas") { FormulasScreen() }
@@ -129,14 +134,16 @@ fun PmpStudyApp(
                 QuizHubScreen(onOpenPack = { id -> navController.navigate("quiz/take/$id") })
             }
             composable(
-                route = "quiz/take/{id}",
+                route     = "quiz/take/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 QuizScreen(packId = id, onBack = { navController.popBackStack() })
             }
             composable("bookmarks") {
-                BookmarksScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
+                BookmarksScreen(onOpenChapter = { id, sectionIdx ->
+                    navController.navigate("chapter/$id?section=$sectionIdx")
+                })
             }
         }
     }
