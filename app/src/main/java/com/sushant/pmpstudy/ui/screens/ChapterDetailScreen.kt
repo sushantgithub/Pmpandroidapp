@@ -57,6 +57,7 @@ import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
 import com.sushant.pmpstudy.ui.theme.calloutColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +78,7 @@ fun ChapterDetailScreen(
     val hasToc = (chapter?.sections?.size ?: 0) > 3
     LaunchedEffect(initialSection) {
         if (initialSection >= 0) {
+            delay(300L) // wait for LazyColumn to lay out before scrolling
             val offset = if (hasToc) 2 else 1
             listState.animateScrollToItem(initialSection + offset)
         }
@@ -219,9 +221,9 @@ fun ChapterDetailScreen(
                             FilterChip(
                                 selected = false,
                                 onClick  = {
-                                    tocVisible = false
                                     scope.launch {
                                         listState.animateScrollToItem(pair.second + 2)
+                                        tocVisible = false
                                     }
                                 },
                                 label = {
