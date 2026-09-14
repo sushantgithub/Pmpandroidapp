@@ -25,9 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,7 +45,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
     val versionName = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull() ?: "2.6.2"
+        }.getOrNull() ?: "2.6.3"
     }
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = if (query.isBlank()) {
@@ -54,10 +54,10 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
         val q = query.lowercase().trim()
         StudyRepository.chapters.filter { it.matches(q) }
     }
-    val grouped = filtered.groupBy { it.category }
-    val quizCount = StudyRepository.allQuestions.size
+    val grouped    = filtered.groupBy { it.category }
+    val quizCount  = StudyRepository.allQuestions.size
     val totalChaps = StudyRepository.chapters.size
-    val readCount = AppState.readChapterIds.size
+    val readCount  = AppState.readChapterIds.size
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -67,24 +67,24 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
     ) {
         item {
             ScreenHeader(
-                title = "PMP® Prep Guide",
+                title    = "PMP® Prep Guide",
                 subtitle = "By Sushant Kulkarni · 2026 ECO Edition"
             )
             StatRow(
                 items = listOf(
                     "$readCount/$totalChaps" to "Read",
-                    quizCount.toString() to "Questions",
-                    "v$versionName" to "Build"
+                    quizCount.toString()     to "Questions",
+                    "v$versionName"          to "Build"
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
-                value = query,
+                value         = query,
                 onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("Search chapters & notes") },
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) }
+                modifier      = Modifier.fillMaxWidth(),
+                singleLine    = true,
+                label         = { Text("Search chapters & notes") },
+                leadingIcon   = { Icon(Icons.Outlined.Search, contentDescription = null) }
             )
         }
 
@@ -92,8 +92,8 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
             item {
                 Text(
                     "No chapters match \"$query\". Try a topic like EVM, Scrum, or ethics.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style    = MaterialTheme.typography.bodyMedium,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 16.dp)
                 )
             }
@@ -103,19 +103,19 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
             item(key = "h-$category") {
                 Text(
                     category.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
                 )
             }
             items(chapters, key = { it.id }) { chapter ->
-                val n = StudyRepository.questionsForChapter(chapter.id).size
-                val isRead = AppState.isRead(chapter.id)
+                val n       = StudyRepository.questionsForChapter(chapter.id).size
+                val isRead  = AppState.isRead(chapter.id)
                 Card(
-                    modifier = Modifier
+                    modifier  = Modifier
                         .fillMaxWidth()
                         .clickable { onOpenChapter(chapter.id) },
-                    colors = CardDefaults.cardColors(
+                    colors    = CardDefaults.cardColors(
                         containerColor = if (isRead)
                             MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
                         else
@@ -124,15 +124,15 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(chapter.title, style = MaterialTheme.typography.titleMedium)
                             Text(
                                 chapter.subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style    = MaterialTheme.typography.bodySmall,
+                                color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 3.dp),
                                 maxLines = 2
                             )
@@ -146,14 +146,14 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                             Icon(
                                 Icons.Outlined.CheckCircle,
                                 contentDescription = "Read",
-                                tint = MaterialTheme.colorScheme.secondary,
+                                tint     = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(20.dp).padding(start = 4.dp)
                             )
                         } else {
                             Icon(
                                 Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                                 contentDescription = "Open",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
@@ -177,3 +177,5 @@ private fun Chapter.matches(q: String): Boolean {
             section.tableRows.any { row -> row.any { it.lowercase().contains(q) } }
     }
 }
+
+
