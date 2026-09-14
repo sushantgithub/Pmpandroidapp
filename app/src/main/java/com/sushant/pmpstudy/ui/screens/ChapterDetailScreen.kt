@@ -70,13 +70,12 @@ fun ChapterDetailScreen(
     val quizCount  = StudyRepository.questionsForChapter(chapterId).size
     val listState  = remember { LazyListState() }
     val scope      = rememberCoroutineScope()
-    // Scroll to bookmarked section on open (header=0, toc=1 if present, sections start at offset)
-    val hasToc = (chapter?.sections?.size ?: 0) > 3
+    // Scroll to bookmarked section on open
+    // TOC is now a sticky bar outside LazyColumn, so offset is always 1 (just the header item)
     LaunchedEffect(initialSection) {
         if (initialSection >= 0) {
             delay(300L) // wait for LazyColumn to lay out before scrolling
-            val offset = if (hasToc) 2 else 1
-            listState.animateScrollToItem(initialSection + offset)
+            listState.animateScrollToItem(initialSection + 1)
         }
     }
     val dark       = isSystemInDarkTheme()
@@ -85,8 +84,7 @@ fun ChapterDetailScreen(
 
     // ── Reading progress ──────────────────────────────────────────────────
     val totalItems = 1 + // header item
-        (if ((chapter?.sections?.size ?: 0) > 3) 1 else 0) + // toc item
-        (chapter?.sections?.size ?: 0)
+        (chapter?.sections?.size ?: 0) // sections (TOC is now outside LazyColumn)
 
     val readingProgress by remember(listState) {
         derivedStateOf {
@@ -183,8 +181,46 @@ fun ChapterDetailScreen(
             Text("Chapter not found.", modifier = Modifier.padding(inner).padding(16.dp))
             return@Scaffold
         }
+        Column(Modifier.fillMaxSize().padding(inner)) {
+            // Sticky "Jump to" bar — always visible, never scrolls away
+            if (toc.size > 3) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        "Jump to",
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        itemsIndexed(toc, key = { i, pair -> "${pair.second}-$i" }) { _, pair ->
+                            FilterChip(
+                                selected = false,
+                                onClick  = {
+                                    scope.launch {
+                                        // offset = 1 (header item only; toc is no longer in LazyColumn)
+                                        listState.animateScrollToItem(pair.second + 1)
+                                    }
+                                },
+                                label = {
+                                    Text(
+                                        pair.first,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
         LazyColumn(
-            modifier            = Modifier.fillMaxSize().padding(inner),
+            modifier            = Modifier.weight(1f),
             state               = listState,
             contentPadding      = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -201,37 +237,6 @@ fun ChapterDetailScreen(
                     color    = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 6.dp)
                 )
-            }
-
-            // Table of contents chips
-            if (toc.size > 3) {
-                item {
-                    Text(
-                        "Jump to",
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        itemsIndexed(toc, key = { i, pair -> "${pair.second}-$i" }) { _, pair ->
-                            FilterChip(
-                                selected = false,
-                                onClick  = {
-                                    scope.launch {
-                                        listState.animateScrollToItem(pair.second + 2)
-                                    }
-                                },
-                                label = {
-                                    Text(
-                                        pair.first,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
             }
 
             itemsIndexed(chapter.sections, key = { idx, _ -> "${chapter.id}-$idx" }) { sectionIdx, section ->
@@ -303,7 +308,8 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-        }
+        } // end LazyColumn
+        } // end outer Column (sticky TOC + LazyColumn)
     }
 }
 
