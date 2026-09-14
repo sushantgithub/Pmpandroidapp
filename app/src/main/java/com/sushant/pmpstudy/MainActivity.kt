@@ -7,6 +7,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.sushant.pmpstudy.ui.PmpStudyApp
@@ -16,7 +20,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val darkTheme = isSystemInDarkTheme()
+            val systemDark = isSystemInDarkTheme()
+            // null = follow system, true = forced dark, false = forced light
+            var themeOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            val darkTheme = themeOverride ?: systemDark
+
             val darkBar = Color(0xFF0B1524).toArgb()
             val lightBar = Color(0xFFF5F7FA).toArgb()
             SideEffect {
@@ -28,7 +36,10 @@ class MainActivity : ComponentActivity() {
                 )
             }
             PmpStudyTheme(darkTheme = darkTheme) {
-                PmpStudyApp()
+                PmpStudyApp(
+                    darkTheme = darkTheme,
+                    onToggleTheme = { themeOverride = !darkTheme }
+                )
             }
         }
     }

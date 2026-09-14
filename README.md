@@ -14,7 +14,7 @@ This project is an independent study resource. **Not affiliated with, endorsed b
 
 ## Download APK
 
-Prebuilt debug APK (Android 8.0+, **v2.5.1**):
+Prebuilt debug APK (Android 8.0+, **v2.5.2**):
 
 https://github.com/sushantgithub/Pmpandroidapp/raw/cursor/reorder-learn-chapters-0624/releases/PMP_Study.apk
 

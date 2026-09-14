@@ -42,7 +42,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
     val versionName = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull() ?: "2.5.1"
+        }.getOrNull() ?: "2.5.2"
     }
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = if (query.isBlank()) {
