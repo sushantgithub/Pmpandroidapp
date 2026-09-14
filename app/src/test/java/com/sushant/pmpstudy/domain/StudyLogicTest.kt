@@ -88,6 +88,19 @@ class QuizGraderTest {
     }
 
     @Test
+    fun caseStudyQuestionsSplitIntoTwoGroups() {
+        val (caseOne, caseTwo) = StudyRepository.caseStudyQuestionGroups()
+        assertEquals(6, caseOne.size)
+        assertEquals(4, caseTwo.size)
+        assertTrue(caseOne.all { it.prompt.contains("Case Study 1") })
+        assertTrue(caseTwo.all { it.prompt.contains("Case Study 2") })
+        assertEquals("q162", caseOne.first().id)
+        assertEquals("q167", caseOne.last().id)
+        assertEquals("q168", caseTwo.first().id)
+        assertEquals("q171", caseTwo.last().id)
+    }
+
+    @Test
     fun hasWorkedExamplesAndAboutChapter() {
         assertTrue(StudyRepository.chapters.any { it.id == "about" })
         val examples = StudyRepository.chapters.flatMap { it.sections }.count { section ->

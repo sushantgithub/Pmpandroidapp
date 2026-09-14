@@ -43,6 +43,11 @@ object StudyRepository {
     fun questionsForChapter(chapterId: String): List<QuizQuestion> =
         allQuestions.filter { it.chapterId == chapterId }
 
+    fun caseStudyQuestionGroups(): Pair<List<QuizQuestion>, List<QuizQuestion>> {
+        val questions = questionsForChapter("casestudies")
+        return questions.take(6) to questions.drop(6)
+    }
+
     val mixedExam: QuizPack = QuizPack(
         id = "mixed",
         title = "Mixed exam set",

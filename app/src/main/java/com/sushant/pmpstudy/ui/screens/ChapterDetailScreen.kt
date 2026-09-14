@@ -31,15 +31,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sushant.pmpstudy.data.Section
 import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.ui.components.InlineQuizSection
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
 import com.sushant.pmpstudy.ui.theme.CalloutDanger
@@ -58,6 +64,11 @@ fun ChapterDetailScreen(
 ) {
     val chapter = StudyRepository.chapter(chapterId)
     val quizCount = StudyRepository.questionsForChapter(chapterId).size
+    val isCaseStudyChapter = chapterId == "casestudies"
+    val caseStudyGroups = remember(isCaseStudyChapter) {
+        if (isCaseStudyChapter) StudyRepository.caseStudyQuestionGroups() else null
+    }
+    var inlineAnswers by rememberSaveable(chapterId) { mutableStateOf(mapOf<String, Int>()) }
     val listState = remember { LazyListState() }
     val scope = rememberCoroutineScope()
     val toc = remember(chapter) {
@@ -89,7 +100,7 @@ fun ChapterDetailScreen(
             )
         },
         bottomBar = {
-            if (quizCount > 0 && chapter != null) {
+            if (quizCount > 0 && chapter != null && !isCaseStudyChapter) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -126,7 +137,7 @@ fun ChapterDetailScreen(
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
-            if (toc.size > 3) {
+            if (!isCaseStudyChapter && toc.size > 3) {
                 item {
                     Text(
                         "Jump to",
@@ -155,52 +166,101 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
-                val (bg, fg, accent, badge) = when (section.kind) {
-                    SectionKind.BODY -> Quad(
-                        MaterialTheme.colorScheme.surfaceVariant,
-                        MaterialTheme.colorScheme.onSurface,
-                        MaterialTheme.colorScheme.primary,
-                        null
-                    )
-                    SectionKind.NOTE -> Quad(CalloutNote, Color(0xFFD6E4FF), Color(0xFF7EB6FF), "NOTE")
-                    SectionKind.TIP -> Quad(CalloutTip, Color(0xFFD1FAE5), Color(0xFF3DDC97), "TIP")
-                    SectionKind.WARN -> Quad(CalloutWarn, Color(0xFFFEF3C7), Color(0xFFE8C547), "WATCH")
-                    SectionKind.DANGER -> Quad(CalloutDanger, Color(0xFFFECACA), Color(0xFFFF8A8A), "EXAM TRAP")
-                    SectionKind.KEY -> Quad(CalloutKey, Color(0xFFEDE9FE), Color(0xFFC4B5FD), "KEY")
+            if (isCaseStudyChapter && caseStudyGroups != null) {
+                val introSections = chapter.sections.filterNot { it.isCaseStudyScenario() }
+                val caseStudyOne = chapter.sections.firstOrNull { it.heading.startsWith("Case Study 1") }
+                val caseStudyTwo = chapter.sections.firstOrNull { it.heading.startsWith("Case Study 2") }
+                val (caseOneQuestions, caseTwoQuestions) = caseStudyGroups
+
+                itemsIndexed(introSections, key = { index, _ -> "intro-$index" }) { _, section ->
+                    ChapterSectionCard(section = section)
                 }
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = bg),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 12.dp)
-                                .width(4.dp)
-                                .height(48.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(accent)
-                        )
-                        Column(Modifier.padding(14.dp).weight(1f)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (badge != null) KindBadge(badge)
-                            }
-                            Text(
-                                section.heading,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = fg,
-                                modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
-                            )
-                            StudyContentView(section = section, textColor = fg)
-                        }
+                if (caseStudyOne != null) {
+                    item(key = "case-study-1") {
+                        ChapterSectionCard(section = caseStudyOne)
                     }
+                    item(key = "case-study-1-quiz") {
+                        InlineQuizSection(
+                            title = "Practice questions — Case Study 1",
+                            questions = caseOneQuestions,
+                            answers = inlineAnswers,
+                            onAnswer = { questionId, choiceIndex ->
+                                inlineAnswers = inlineAnswers + (questionId to choiceIndex)
+                            }
+                        )
+                    }
+                }
+                if (caseStudyTwo != null) {
+                    item(key = "case-study-2") {
+                        ChapterSectionCard(section = caseStudyTwo)
+                    }
+                    item(key = "case-study-2-quiz") {
+                        InlineQuizSection(
+                            title = "Practice questions — Case Study 2",
+                            questions = caseTwoQuestions,
+                            answers = inlineAnswers,
+                            onAnswer = { questionId, choiceIndex ->
+                                inlineAnswers = inlineAnswers + (questionId to choiceIndex)
+                            }
+                        )
+                    }
+                }
+            } else {
+                itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
+                    ChapterSectionCard(section = section)
                 }
             }
         }
     }
 }
+
+@Composable
+private fun ChapterSectionCard(section: Section) {
+    val (bg, fg, accent, badge) = when (section.kind) {
+        SectionKind.BODY -> Quad(
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.onSurface,
+            MaterialTheme.colorScheme.primary,
+            null
+        )
+        SectionKind.NOTE -> Quad(CalloutNote, Color(0xFFD6E4FF), Color(0xFF7EB6FF), "NOTE")
+        SectionKind.TIP -> Quad(CalloutTip, Color(0xFFD1FAE5), Color(0xFF3DDC97), "TIP")
+        SectionKind.WARN -> Quad(CalloutWarn, Color(0xFFFEF3C7), Color(0xFFE8C547), "WATCH")
+        SectionKind.DANGER -> Quad(CalloutDanger, Color(0xFFFECACA), Color(0xFFFF8A8A), "EXAM TRAP")
+        SectionKind.KEY -> Quad(CalloutKey, Color(0xFFEDE9FE), Color(0xFFC4B5FD), "KEY")
+    }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = bg),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(4.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(accent)
+            )
+            Column(Modifier.padding(14.dp).weight(1f)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (badge != null) KindBadge(badge)
+                }
+                Text(
+                    section.heading,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = fg,
+                    modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
+                )
+                StudyContentView(section = section, textColor = fg)
+            }
+        }
+    }
+}
+
+private fun Section.isCaseStudyScenario(): Boolean =
+    heading.startsWith("Case Study 1") || heading.startsWith("Case Study 2")
 
 private data class Quad(
     val bg: Color,
