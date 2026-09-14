@@ -12,8 +12,8 @@ android {
         applicationId = "com.sushant.pmpstudy"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "2.4.3"
+        versionCode = 19
+        versionName = "2.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

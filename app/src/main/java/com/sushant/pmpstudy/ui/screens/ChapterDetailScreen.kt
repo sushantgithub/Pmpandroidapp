@@ -1,6 +1,7 @@
 package com.sushant.pmpstudy.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,11 +49,7 @@ import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.ui.components.InlineQuizSection
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
-import com.sushant.pmpstudy.ui.theme.CalloutDanger
-import com.sushant.pmpstudy.ui.theme.CalloutKey
-import com.sushant.pmpstudy.ui.theme.CalloutNote
-import com.sushant.pmpstudy.ui.theme.CalloutTip
-import com.sushant.pmpstudy.ui.theme.CalloutWarn
+import com.sushant.pmpstudy.ui.theme.calloutColors
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +68,8 @@ fun ChapterDetailScreen(
     var inlineAnswers by rememberSaveable(chapterId) { mutableStateOf(mapOf<String, Int>()) }
     val listState = remember { LazyListState() }
     val scope = rememberCoroutineScope()
+    val dark = isSystemInDarkTheme()
+    val callouts = calloutColors(dark)
     val toc = remember(chapter) {
         chapter?.sections
             ?.mapIndexed { index, section -> section.heading to index }
@@ -78,6 +77,7 @@ fun ChapterDetailScreen(
             ?.take(12)
             .orEmpty()
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -173,11 +173,11 @@ fun ChapterDetailScreen(
                 val (caseOneQuestions, caseTwoQuestions) = caseStudyGroups
 
                 itemsIndexed(introSections, key = { index, _ -> "intro-$index" }) { _, section ->
-                    ChapterSectionCard(section = section)
+                    ChapterSectionCard(section = section, callouts = callouts, dark = dark)
                 }
                 if (caseStudyOne != null) {
                     item(key = "case-study-1") {
-                        ChapterSectionCard(section = caseStudyOne)
+                        ChapterSectionCard(section = caseStudyOne, callouts = callouts, dark = dark)
                     }
                     item(key = "case-study-1-quiz") {
                         InlineQuizSection(
@@ -192,7 +192,7 @@ fun ChapterDetailScreen(
                 }
                 if (caseStudyTwo != null) {
                     item(key = "case-study-2") {
-                        ChapterSectionCard(section = caseStudyTwo)
+                        ChapterSectionCard(section = caseStudyTwo, callouts = callouts, dark = dark)
                     }
                     item(key = "case-study-2-quiz") {
                         InlineQuizSection(
@@ -206,8 +206,8 @@ fun ChapterDetailScreen(
                     }
                 }
             } else {
-                itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
-                    ChapterSectionCard(section = section)
+                itemsIndexed(chapter.sections, key = { idx, _ -> "${chapter.id}-$idx" }) { _, section ->
+                    ChapterSectionCard(section = section, callouts = callouts, dark = dark)
                 }
             }
         }
@@ -215,7 +215,11 @@ fun ChapterDetailScreen(
 }
 
 @Composable
-private fun ChapterSectionCard(section: Section) {
+private fun ChapterSectionCard(
+    section: Section,
+    callouts: com.sushant.pmpstudy.ui.theme.CalloutColors,
+    dark: Boolean
+) {
     val (bg, fg, accent, badge) = when (section.kind) {
         SectionKind.BODY -> Quad(
             MaterialTheme.colorScheme.surfaceVariant,
@@ -223,16 +227,17 @@ private fun ChapterSectionCard(section: Section) {
             MaterialTheme.colorScheme.primary,
             null
         )
-        SectionKind.NOTE -> Quad(CalloutNote, Color(0xFFD6E4FF), Color(0xFF7EB6FF), "NOTE")
-        SectionKind.TIP -> Quad(CalloutTip, Color(0xFFD1FAE5), Color(0xFF3DDC97), "TIP")
-        SectionKind.WARN -> Quad(CalloutWarn, Color(0xFFFEF3C7), Color(0xFFE8C547), "WATCH")
-        SectionKind.DANGER -> Quad(CalloutDanger, Color(0xFFFECACA), Color(0xFFFF8A8A), "EXAM TRAP")
-        SectionKind.KEY -> Quad(CalloutKey, Color(0xFFEDE9FE), Color(0xFFC4B5FD), "KEY")
+        SectionKind.NOTE -> Quad(callouts.note, if (dark) Color(0xFFD6E4FF) else Color(0xFF1A3A6E), Color(0xFF7EB6FF), "NOTE")
+        SectionKind.TIP -> Quad(callouts.tip, if (dark) Color(0xFFD1FAE5) else Color(0xFF155742), Color(0xFF3DDC97), "TIP")
+        SectionKind.WARN -> Quad(callouts.warn, if (dark) Color(0xFFFEF3C7) else Color(0xFF6B4200), Color(0xFFE8C547), "WATCH")
+        SectionKind.DANGER -> Quad(callouts.danger, if (dark) Color(0xFFFECACA) else Color(0xFF7A1E2A), Color(0xFFFF8A8A), "EXAM TRAP")
+        SectionKind.KEY -> Quad(callouts.key, if (dark) Color(0xFFEDE9FE) else Color(0xFF3B2A6B), Color(0xFFC4B5FD), "KEY")
     }
     Card(
         colors = CardDefaults.cardColors(containerColor = bg),
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(Modifier.fillMaxWidth()) {
             Box(
@@ -244,8 +249,8 @@ private fun ChapterSectionCard(section: Section) {
                     .background(accent)
             )
             Column(Modifier.padding(14.dp).weight(1f)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (badge != null) KindBadge(badge)
+                if (badge != null) {
+                    KindBadge(badge)
                 }
                 Text(
                     section.heading,
