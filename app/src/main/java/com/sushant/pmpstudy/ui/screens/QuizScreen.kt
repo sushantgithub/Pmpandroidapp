@@ -58,6 +58,10 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     var finished  by rememberSaveable(packId) { mutableStateOf(false) }
     var skipped   by rememberSaveable(packId) { mutableStateOf(setOf<String>()) }
     var reviewingSkipped by rememberSaveable(packId) { mutableStateOf(false) }
+    // Stable snapshot of the question IDs being reviewed. Driving the review list
+    // from this (rather than the live `skipped` set) keeps the list from shrinking
+    // as questions are answered, so the answer/explanation reveal stays visible.
+    var reviewQueue by rememberSaveable(packId) { mutableStateOf(listOf<String>()) }
     val haptic = LocalHapticFeedback.current
 
     Scaffold(
@@ -184,7 +188,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false },
+                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList() },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(
@@ -198,7 +202,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
 
         // ── Question screen ──────────────────────────────────────────────────
         // If reviewing skipped questions, filter to those
-        val activeQuestions = if (reviewingSkipped) questions.filter { it.id in skipped } else questions
+        val activeQuestions = if (reviewingSkipped)
+            reviewQueue.mapNotNull { id -> questions.firstOrNull { it.id == id } }
+        else questions
         val safeIndex   = index.coerceIn(0, activeQuestions.lastIndex)
         val question    = activeQuestions[safeIndex]
         val selected    = answers[question.id]
@@ -266,11 +272,12 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             } else {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
-                            // Auto-remove from skipped when answered
+                            // Auto-remove from skipped when answered. The review list is
+                            // driven by reviewQueue (a stable snapshot), so removing the id
+                            // here no longer reshuffles the current question — the reveal
+                            // stays on screen until the user advances with the buttons below.
                             if (question.id in skipped) {
                                 skipped = skipped - question.id
-                                // If all skipped questions have been answered, wrap up
-                                if (reviewingSkipped && skipped.isEmpty()) finished = true
                             }
                         }
                     ) {
@@ -339,9 +346,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             if (safeIndex < questions.lastIndex) index = safeIndex + 1
                             else {
                                 // reached end — enter skip review if any skipped remain unanswered
-                                val unanswered = skipped.filter { id -> answers[id] == null }.toSet()
+                                val unanswered = skipped.filter { id -> answers[id] == null }
                                 if (unanswered.isNotEmpty()) {
-                                    skipped = unanswered
+                                    reviewQueue = unanswered
                                     reviewingSkipped = true
                                     index = 0
                                 } else finished = true
@@ -357,9 +364,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                                 // Done reviewing skipped
                                 finished = true
                             } else {
-                                val unanswered = skipped.filter { id -> answers[id] == null }.toSet()
+                                val unanswered = skipped.filter { id -> answers[id] == null }
                                 if (unanswered.isNotEmpty()) {
-                                    skipped = unanswered
+                                    reviewQueue = unanswered
                                     reviewingSkipped = true
                                     index = 0
                                 } else {
