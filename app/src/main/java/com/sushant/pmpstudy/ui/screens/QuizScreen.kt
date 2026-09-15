@@ -267,7 +267,11 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
                             // Auto-remove from skipped when answered
-                            if (question.id in skipped) skipped = skipped - question.id
+                            if (question.id in skipped) {
+                                skipped = skipped - question.id
+                                // If all skipped questions have been answered, wrap up
+                                if (reviewingSkipped && skipped.isEmpty()) finished = true
+                            }
                         }
                     ) {
                         Row(
