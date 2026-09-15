@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.sushant.pmpstudy.data.Chapter
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScreenHeader
@@ -45,12 +44,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
         }.getOrNull() ?: "2.4.0"
     }
     var query by rememberSaveable { mutableStateOf("") }
-    val filtered = if (query.isBlank()) {
-        StudyRepository.chapters
-    } else {
-        val q = query.lowercase().trim()
-        StudyRepository.chapters.filter { it.matches(q) }
-    }
+    val filtered = remember(query) { StudyRepository.search(query) }
     val grouped = filtered.groupBy { it.category }
     val quizCount = StudyRepository.allQuestions.size
 
@@ -137,17 +131,5 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 }
             }
         }
-    }
-}
-
-private fun Chapter.matches(q: String): Boolean {
-    if (title.lowercase().contains(q) || subtitle.lowercase().contains(q) || category.lowercase().contains(q)) {
-        return true
-    }
-    return sections.any { section ->
-        section.heading.lowercase().contains(q) ||
-            section.body.lowercase().contains(q) ||
-            section.tableHeaders.any { it.lowercase().contains(q) } ||
-            section.tableRows.any { row -> row.any { it.lowercase().contains(q) } }
     }
 }

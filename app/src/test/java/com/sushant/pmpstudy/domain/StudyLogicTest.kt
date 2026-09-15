@@ -82,6 +82,33 @@ class QuizGraderTest {
     }
 
     @Test
+    fun blankSearchReturnsEveryChapter() {
+        assertEquals(StudyRepository.chapters, StudyRepository.search(""))
+        assertEquals(StudyRepository.chapters, StudyRepository.search("   "))
+    }
+
+    @Test
+    fun searchIsCaseInsensitiveAndTrimsQuery() {
+        val lower = StudyRepository.search("monte carlo")
+        assertEquals(lower, StudyRepository.search("MONTE CARLO"))
+        assertEquals(lower, StudyRepository.search("  Monte Carlo  "))
+        assertTrue(lower.isNotEmpty())
+    }
+
+    @Test
+    fun searchMatchesTableCellContentNotJustTitles() {
+        // "Resource Smoothing" only appears inside a table, never in a chapter title.
+        val hits = StudyRepository.search("resource smoothing")
+        assertTrue(hits.isNotEmpty())
+        assertTrue(hits.none { it.title.lowercase().contains("resource smoothing") })
+    }
+
+    @Test
+    fun searchWithNoMatchReturnsEmpty() {
+        assertTrue(StudyRepository.search("zzqqxx").isEmpty())
+    }
+
+    @Test
     fun hasWorkedExamplesAndAboutChapter() {
         assertTrue(StudyRepository.chapters.any { it.id == "about" })
         val examples = StudyRepository.chapters.flatMap { it.sections }.count { section ->
