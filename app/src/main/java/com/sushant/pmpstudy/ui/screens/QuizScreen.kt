@@ -266,12 +266,10 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             } else {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
-                            // Auto-remove from skipped when answered
-                            if (question.id in skipped) {
-                                skipped = skipped - question.id
-                                // If all skipped questions have been answered, wrap up
-                                if (reviewingSkipped && skipped.isEmpty()) finished = true
-                            }
+                            // NOTE: do NOT remove from skipped here — that would
+                            // immediately shrink activeQuestions and prevent the
+                            // correct/wrong feedback from rendering. Removal happens
+                            // in the Next button handler after the user sees the result.
                         }
                     ) {
                         Row(
@@ -352,12 +350,24 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
                 Button(
                     onClick  = {
+                        // Remove current question from skipped now that user has seen the result
+                        val currentId = question.id
+                        val newSkipped = if (currentId in skipped) skipped - currentId else skipped
+
                         if (safeIndex == activeQuestions.lastIndex) {
                             if (reviewingSkipped) {
-                                // Done reviewing skipped
-                                finished = true
+                                skipped = newSkipped
+                                // If any skipped questions still unanswered, keep reviewing
+                                val stillUnanswered = newSkipped.filter { id -> answers[id] == null }.toSet()
+                                if (stillUnanswered.isNotEmpty()) {
+                                    skipped = stillUnanswered
+                                    index = 0
+                                } else {
+                                    finished = true
+                                }
                             } else {
-                                val unanswered = skipped.filter { id -> answers[id] == null }.toSet()
+                                val unanswered = newSkipped.filter { id -> answers[id] == null }.toSet()
+                                skipped = newSkipped
                                 if (unanswered.isNotEmpty()) {
                                     skipped = unanswered
                                     reviewingSkipped = true
@@ -367,6 +377,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                                 }
                             }
                         } else {
+                            skipped = newSkipped
                             index = safeIndex + 1
                         }
                     },
