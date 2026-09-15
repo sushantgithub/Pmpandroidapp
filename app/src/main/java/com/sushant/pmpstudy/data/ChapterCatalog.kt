@@ -1,6 +1,9 @@
 package com.sushant.pmpstudy.data
 
-private fun s(
+// `internal` (not `private`): this helper is shared across the ChapterCatalog*
+// files in this module. A `private` top-level function is file-scoped, so the
+// calls in ChapterCatalogA.kt / ChapterCatalogB.kt would not compile.
+internal fun s(
     heading: String,
     body: String = "",
     kind: SectionKind = SectionKind.BODY,
