@@ -32,7 +32,8 @@ data class QuizQuestion(
     val prompt: String,
     val choices: List<String>,
     val correctIndex: Int,
-    val explanation: String
+    val explanation: String,
+    val scenario: String? = null
 )
 
 data class QuizPack(
