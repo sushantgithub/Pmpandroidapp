@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.QuizGrader
+import com.sushant.pmpstudy.ui.components.KindBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +59,14 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     var finished  by rememberSaveable(packId) { mutableStateOf(false) }
     var skipped   by rememberSaveable(packId) { mutableStateOf(setOf<String>()) }
     var reviewingSkipped by rememberSaveable(packId) { mutableStateOf(false) }
+    // Stable snapshot of the question IDs being reviewed. Driving the review list
+    // from this (rather than the live `skipped` set) keeps the list from shrinking
+    // as questions are answered, so the answer/explanation reveal stays visible.
+    var reviewQueue by rememberSaveable(packId) { mutableStateOf(listOf<String>()) }
+    // Survives configuration changes alongside `finished`, so rotating on the
+    // results screen does not record the same attempt again.
+    var recorded by rememberSaveable(packId) { mutableStateOf(false) }
+    var isPersonalBest by rememberSaveable(packId) { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     Scaffold(
@@ -100,7 +109,10 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
 
             // Save to history
             LaunchedEffect(Unit) {
-                AppState.saveQuizResult(packId, pct, result.correct, result.total)
+                if (!recorded) {
+                    isPersonalBest = AppState.saveQuizResult(packId, pct)
+                    recorded = true
+                }
             }
 
             Column(
@@ -130,6 +142,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
+                if (isPersonalBest && (AppState.progressFor(packId)?.attempts ?: 0) > 1) {
+                    KindBadge("NEW BEST", modifier = Modifier.padding(bottom = 8.dp))
+                }
                 Text(
                     when {
                         pct >= 80 -> "Strong performance 🎉"
@@ -184,7 +199,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false },
+                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList(); recorded = false; isPersonalBest = false },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(
@@ -198,7 +213,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
 
         // ── Question screen ──────────────────────────────────────────────────
         // If reviewing skipped questions, filter to those
-        val activeQuestions = if (reviewingSkipped) questions.filter { it.id in skipped } else questions
+        val activeQuestions = if (reviewingSkipped)
+            reviewQueue.mapNotNull { id -> questions.firstOrNull { it.id == id } }
+        else questions
         val safeIndex   = index.coerceIn(0, activeQuestions.lastIndex)
         val question    = activeQuestions[safeIndex]
         val selected    = answers[question.id]
@@ -238,6 +255,27 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (question.scenario != null) {
+                    Card(
+                        colors   = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(
+                                "📋 Scenario",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Text(
+                                question.scenario,
+                                style    = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
+                    }
+                }
                 if (isSkipped) {
                     Text(
                         "Previously skipped",
@@ -266,11 +304,12 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             } else {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
-                            // Auto-remove from skipped when answered
+                            // Auto-remove from skipped when answered. The review list is
+                            // driven by reviewQueue (a stable snapshot), so removing the id
+                            // here no longer reshuffles the current question — the reveal
+                            // stays on screen until the user advances with the buttons below.
                             if (question.id in skipped) {
                                 skipped = skipped - question.id
-                                // If all skipped questions have been answered, wrap up
-                                if (reviewingSkipped && skipped.isEmpty()) finished = true
                             }
                         }
                     ) {
@@ -339,9 +378,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             if (safeIndex < questions.lastIndex) index = safeIndex + 1
                             else {
                                 // reached end — enter skip review if any skipped remain unanswered
-                                val unanswered = skipped.filter { id -> answers[id] == null }.toSet()
+                                val unanswered = skipped.filter { id -> answers[id] == null }
                                 if (unanswered.isNotEmpty()) {
-                                    skipped = unanswered
+                                    reviewQueue = unanswered
                                     reviewingSkipped = true
                                     index = 0
                                 } else finished = true
@@ -357,9 +396,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                                 // Done reviewing skipped
                                 finished = true
                             } else {
-                                val unanswered = skipped.filter { id -> answers[id] == null }.toSet()
+                                val unanswered = skipped.filter { id -> answers[id] == null }
                                 if (unanswered.isNotEmpty()) {
-                                    skipped = unanswered
+                                    reviewQueue = unanswered
                                     reviewingSkipped = true
                                     index = 0
                                 } else {

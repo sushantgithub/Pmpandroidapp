@@ -9,14 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,35 +30,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.sushant.pmpstudy.data.Chapter
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScreenHeader
 import com.sushant.pmpstudy.ui.components.StatRow
+import com.sushant.pmpstudy.ui.components.scoreColor
 
 @Composable
 fun LearnScreen(onOpenChapter: (String) -> Unit) {
-    val context = LocalContext.current
-    val versionName = remember {
-        runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull() ?: "2.4.0"
-    }
     var query by rememberSaveable { mutableStateOf("") }
-    val filtered = if (query.isBlank()) {
-        StudyRepository.chapters
-    } else {
-        val q = query.lowercase().trim()
-        StudyRepository.chapters.filter { it.matches(q) }
-    }
+    val filtered = remember(query) { StudyRepository.search(query) }
     val grouped = filtered.groupBy { it.category }
     val quizCount = StudyRepository.allQuestions.size
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        state = remember { LazyListState() },
+        state = rememberLazyListState(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -69,7 +60,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 items = listOf(
                     StudyRepository.chapters.size.toString() to "Chapters",
                     quizCount.toString() to "Questions",
-                    "v$versionName" to "Build"
+                    (AppState.averageBest?.let { "$it%" } ?: "—") to "Avg best"
                 ),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
@@ -79,7 +70,14 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 label = { Text("Search notes") },
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Clear search")
+                        }
+                    }
+                }
             )
         }
         if (filtered.isEmpty()) {
@@ -102,7 +100,8 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 )
             }
             items(chapters, key = { it.id }) { chapter ->
-                val n = StudyRepository.questionsForChapter(chapter.id).size
+                val n = StudyRepository.questionCount(chapter.id)
+                val progress = AppState.progressFor(chapter.id)
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onOpenChapter(chapter.id) },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -122,10 +121,20 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                                 maxLines = 2
                             )
                             if (n > 0) {
-                                KindBadge(
-                                    "$n quiz questions",
-                                    modifier = Modifier.padding(top = 10.dp)
-                                )
+                                Row(
+                                    modifier = Modifier.padding(top = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    KindBadge("$n quiz questions")
+                                    if (progress != null) {
+                                        Text(
+                                            "Best ${progress.bestPercent}%",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = scoreColor(progress.bestPercent)
+                                        )
+                                    }
+                                }
                             }
                         }
                         Icon(
@@ -137,17 +146,5 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 }
             }
         }
-    }
-}
-
-private fun Chapter.matches(q: String): Boolean {
-    if (title.lowercase().contains(q) || subtitle.lowercase().contains(q) || category.lowercase().contains(q)) {
-        return true
-    }
-    return sections.any { section ->
-        section.heading.lowercase().contains(q) ||
-            section.body.lowercase().contains(q) ||
-            section.tableHeaders.any { it.lowercase().contains(q) } ||
-            section.tableRows.any { row -> row.any { it.lowercase().contains(q) } }
     }
 }

@@ -1,8 +1,12 @@
 package com.sushant.pmpstudy.domain
 
+import com.sushant.pmpstudy.data.FormulaCatalog
 import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class EarnedValueMathTest {
@@ -28,7 +32,7 @@ class QuizGraderTest {
     @Test
     fun packLookupIsCached() {
         assertEquals(StudyRepository.quizPacks, StudyRepository.quizPacks)
-        assertEquals(20, StudyRepository.pack("mixed")?.questions?.size)
+        assertNull(StudyRepository.pack("mixed"))
     }
 
     @Test
@@ -39,11 +43,11 @@ class QuizGraderTest {
     }
 
     @Test
-    fun perfectScoreOnMixed() {
-        val pack = StudyRepository.mixedExam
+    fun perfectScoreOnFormulaDrill() {
+        val pack = StudyRepository.formulaDrill
         val answers = pack.questions.associate { it.id to it.correctIndex }
         val result = QuizGrader.grade(pack.questions, answers)
-        assertEquals(20, result.correct)
+        assertEquals(pack.questions.size, result.correct)
         assertEquals(100, result.percent)
     }
 
@@ -55,8 +59,8 @@ class QuizGraderTest {
     }
 
     @Test
-    fun has171PracticeQuestions() {
-        assertEquals(171, StudyRepository.allQuestions.size)
+    fun has165PracticeQuestions() {
+        assertEquals(165, StudyRepository.allQuestions.size)
     }
 
     @Test
@@ -82,6 +86,33 @@ class QuizGraderTest {
     }
 
     @Test
+    fun blankSearchReturnsEveryChapter() {
+        assertEquals(StudyRepository.chapters, StudyRepository.search(""))
+        assertEquals(StudyRepository.chapters, StudyRepository.search("   "))
+    }
+
+    @Test
+    fun searchIsCaseInsensitiveAndTrimsQuery() {
+        val lower = StudyRepository.search("monte carlo")
+        assertEquals(lower, StudyRepository.search("MONTE CARLO"))
+        assertEquals(lower, StudyRepository.search("  Monte Carlo  "))
+        assertTrue(lower.isNotEmpty())
+    }
+
+    @Test
+    fun searchMatchesTableCellContentNotJustTitles() {
+        // "Resource Smoothing" only appears inside a table, never in a chapter title.
+        val hits = StudyRepository.search("resource smoothing")
+        assertTrue(hits.isNotEmpty())
+        assertTrue(hits.none { it.title.lowercase().contains("resource smoothing") })
+    }
+
+    @Test
+    fun searchWithNoMatchReturnsEmpty() {
+        assertTrue(StudyRepository.search("zzqqxx").isEmpty())
+    }
+
+    @Test
     fun hasWorkedExamplesAndAboutChapter() {
         assertTrue(StudyRepository.chapters.any { it.id == "about" })
         val examples = StudyRepository.chapters.flatMap { it.sections }.count { section ->
@@ -90,6 +121,172 @@ class QuizGraderTest {
         assertTrue(examples >= 20)
         assertEquals(10, StudyRepository.questionsForChapter("casestudies").size)
         assertEquals(6, StudyRepository.questionsForChapter("external-env").size)
-        assertEquals(12, StudyRepository.questionsForChapter("benefits").size)
+        assertEquals(6, StudyRepository.questionsForChapter("benefits").size)
+    }
+}
+
+class QuizDataIntegrityTest {
+    @Test
+    fun everyQuestionIsWellFormed() {
+        StudyRepository.allQuestions.forEach { question ->
+            assertEquals("${question.id} choice count", 4, question.choices.size)
+            assertTrue(
+                "${question.id} correctIndex ${question.correctIndex} out of range",
+                question.correctIndex in question.choices.indices
+            )
+            assertTrue("${question.id} blank prompt", question.prompt.isNotBlank())
+            assertTrue("${question.id} blank explanation", question.explanation.isNotBlank())
+            assertTrue("${question.id} blank choice", question.choices.none { it.isBlank() })
+        }
+    }
+
+    @Test
+    fun questionCountAgreesWithTheFilteredList() {
+        StudyRepository.chapters.forEach { chapter ->
+            assertEquals(
+                "count mismatch for ${chapter.id}",
+                StudyRepository.questionsForChapter(chapter.id).size,
+                StudyRepository.questionCount(chapter.id)
+            )
+        }
+        assertEquals(0, StudyRepository.questionCount("no-such-chapter"))
+    }
+
+    @Test
+    fun everyQuestionBelongsToARealChapter() {
+        val chapterIds = StudyRepository.chapters.map { it.id }.toSet()
+        StudyRepository.allQuestions.forEach { question ->
+            assertTrue(
+                "${question.id} references unknown chapter ${question.chapterId}",
+                question.chapterId in chapterIds
+            )
+        }
+    }
+}
+
+class FormulaDrillTest {
+    @Test
+    fun coversEveryFormulaInTheCatalog() {
+        assertEquals(FormulaCatalog.all.size, StudyRepository.formulaDrill.questions.size)
+    }
+
+    @Test
+    fun eachQuestionMarksItsOwnFormulaAsCorrect() {
+        StudyRepository.formulaDrill.questions.forEachIndexed { index, question ->
+            val formula = FormulaCatalog.all[index]
+            assertTrue(question.correctIndex in question.choices.indices)
+            assertTrue(question.choices[question.correctIndex].endsWith(formula.expression))
+            assertTrue(question.prompt.contains(formula.name))
+        }
+    }
+
+    @Test
+    fun everyQuestionOffersFourDistinctOptions() {
+        StudyRepository.formulaDrill.questions.forEach { question ->
+            assertEquals(4, question.choices.size)
+            // Drop the "A. " / "B. " prefix before comparing the expressions.
+            val expressions = question.choices.map { it.substring(3) }
+            assertEquals(expressions.size, expressions.toSet().size)
+        }
+    }
+
+    @Test
+    fun drillIsReachableAsAQuizPack() {
+        assertEquals(
+            StudyRepository.formulaDrill,
+            StudyRepository.pack(StudyRepository.FORMULA_DRILL_ID)
+        )
+    }
+
+    @Test
+    fun drillIsDeterministicAcrossAccesses() {
+        assertEquals(StudyRepository.formulaDrill, StudyRepository.formulaDrill)
+    }
+
+    @Test
+    fun drillDoesNotInflateTheChapterQuestionCount() {
+        assertEquals(165, StudyRepository.allQuestions.size)
+        assertTrue(StudyRepository.allQuestions.none { it.id.startsWith("formula-") })
+    }
+}
+
+/**
+ * AppState without [AppState.init]: no SharedPreferences is attached, so writes
+ * stay in memory and the in-memory bookkeeping is what these exercise.
+ */
+class ProgressTest {
+
+    @Before
+    fun clearProgress() = AppState.reset()
+
+    @Test
+    fun firstAttemptCountsAsABest() {
+        assertTrue(AppState.saveQuizResult("scope", 55))
+        val progress = AppState.progressFor("scope")
+        assertEquals(55, progress?.bestPercent)
+        assertEquals(55, progress?.lastPercent)
+        assertEquals(1, progress?.attempts)
+    }
+
+    @Test
+    fun bestKeepsTheHighScoreWhileLastFollowsEveryAttempt() {
+        AppState.saveQuizResult("scope", 80)
+        assertTrue("a higher score is a new best", AppState.saveQuizResult("scope", 90))
+        assertFalse("a lower score is not", AppState.saveQuizResult("scope", 40))
+
+        val progress = AppState.progressFor("scope")
+        assertEquals(90, progress?.bestPercent)
+        assertEquals(40, progress?.lastPercent)
+        assertEquals(3, progress?.attempts)
+    }
+
+    @Test
+    fun matchingThePreviousBestIsNotANewBest() {
+        AppState.saveQuizResult("risk", 70)
+        assertFalse(AppState.saveQuizResult("risk", 70))
+        assertEquals(70, AppState.progressFor("risk")?.bestPercent)
+    }
+
+    @Test
+    fun averageSpansEveryAttemptedPackAndIgnoresTheRest() {
+        assertNull(AppState.averageBest)
+        assertEquals(0, AppState.attemptedPacks)
+
+        AppState.saveQuizResult("scope", 90)
+        AppState.saveQuizResult("risk", 61)
+
+        assertEquals(2, AppState.attemptedPacks)
+        // Mean of the bests, rounded: (90 + 61) / 2 = 75.5 -> 76
+        assertEquals(76, AppState.averageBest)
+        assertNull(AppState.progressFor("never-attempted"))
+    }
+
+    @Test
+    fun resetClearsEverything() {
+        AppState.saveQuizResult("scope", 90)
+        AppState.reset()
+        assertEquals(0, AppState.attemptedPacks)
+        assertNull(AppState.averageBest)
+        assertNull(AppState.progressFor("scope"))
+    }
+}
+
+class DisplaySettingsTest {
+    @Test
+    fun defaultFontScaleIsUnscaled() {
+        assertEquals(1.0f, FontScale.MEDIUM.scale, 0.0001f)
+    }
+
+    @Test
+    fun fontScalesAscendAndStayReadable() {
+        val scales = FontScale.values().map { it.scale }
+        assertEquals(scales.sorted(), scales)
+        assertTrue(scales.all { it in 0.5f..2.0f })
+    }
+
+    @Test
+    fun everyOptionIsLabelled() {
+        assertTrue(FontScale.values().all { it.label.isNotBlank() })
+        assertTrue(ThemeMode.values().all { it.label.isNotBlank() })
     }
 }

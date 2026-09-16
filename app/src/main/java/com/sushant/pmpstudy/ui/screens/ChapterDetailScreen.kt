@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -42,11 +42,8 @@ import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
-import com.sushant.pmpstudy.ui.theme.CalloutDanger
-import com.sushant.pmpstudy.ui.theme.CalloutKey
-import com.sushant.pmpstudy.ui.theme.CalloutNote
-import com.sushant.pmpstudy.ui.theme.CalloutTip
-import com.sushant.pmpstudy.ui.theme.CalloutWarn
+import com.sushant.pmpstudy.ui.theme.CalloutStyle
+import com.sushant.pmpstudy.ui.theme.LocalCalloutPalette
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,8 +54,8 @@ fun ChapterDetailScreen(
     onQuiz: () -> Unit
 ) {
     val chapter = StudyRepository.chapter(chapterId)
-    val quizCount = StudyRepository.questionsForChapter(chapterId).size
-    val listState = remember { LazyListState() }
+    val quizCount = StudyRepository.questionCount(chapterId)
+    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val toc = remember(chapter) {
         chapter?.sections
@@ -155,7 +152,8 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
+            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { index, section ->
+                val callouts = LocalCalloutPalette.current
                 val (bg, fg, accent, badge) = when (section.kind) {
                     SectionKind.BODY -> Quad(
                         MaterialTheme.colorScheme.surfaceVariant,
@@ -163,11 +161,11 @@ fun ChapterDetailScreen(
                         MaterialTheme.colorScheme.primary,
                         null
                     )
-                    SectionKind.NOTE -> Quad(CalloutNote, Color(0xFFD6E4FF), Color(0xFF7EB6FF), "NOTE")
-                    SectionKind.TIP -> Quad(CalloutTip, Color(0xFFD1FAE5), Color(0xFF3DDC97), "TIP")
-                    SectionKind.WARN -> Quad(CalloutWarn, Color(0xFFFEF3C7), Color(0xFFE8C547), "WATCH")
-                    SectionKind.DANGER -> Quad(CalloutDanger, Color(0xFFFECACA), Color(0xFFFF8A8A), "EXAM TRAP")
-                    SectionKind.KEY -> Quad(CalloutKey, Color(0xFFEDE9FE), Color(0xFFC4B5FD), "KEY")
+                    SectionKind.NOTE -> callouts.note.quad("NOTE")
+                    SectionKind.TIP -> callouts.tip.quad("TIP")
+                    SectionKind.WARN -> callouts.warn.quad("WATCH")
+                    SectionKind.DANGER -> callouts.danger.quad("EXAM TRAP")
+                    SectionKind.KEY -> callouts.key.quad("KEY")
                 }
                 Card(
                     colors = CardDefaults.cardColors(containerColor = bg),
@@ -187,12 +185,19 @@ fun ChapterDetailScreen(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (badge != null) KindBadge(badge)
                             }
-                            Text(
-                                section.heading,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = fg,
-                                modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
-                            )
+                            // A body card and its follow-up callout share one heading in
+                            // the catalog. Printing it on both reads as the title stuttering,
+                            // so the repeat is dropped and the badge carries the context.
+                            val repeatsHeading =
+                                index > 0 && chapter.sections[index - 1].heading == section.heading
+                            if (!repeatsHeading) {
+                                Text(
+                                    section.heading,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = fg,
+                                    modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
+                                )
+                            }
                             StudyContentView(section = section, textColor = fg)
                         }
                     }
@@ -201,6 +206,8 @@ fun ChapterDetailScreen(
         }
     }
 }
+
+private fun CalloutStyle.quad(badge: String) = Quad(bg, fg, accent, badge)
 
 private data class Quad(
     val bg: Color,

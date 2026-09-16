@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -32,13 +33,16 @@ import com.sushant.pmpstudy.ui.components.ScreenHeader
 import java.util.Locale
 
 @Composable
-fun FormulasScreen() {
-    var ev by remember { mutableStateOf("80000") }
-    var pv by remember { mutableStateOf("100000") }
-    var ac by remember { mutableStateOf("90000") }
-    var bac by remember { mutableStateOf("200000") }
-    var metrics by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
-    var error by remember { mutableStateOf<String?>(null) }
+fun FormulasScreen(onStartDrill: () -> Unit) {
+    var ev by rememberSaveable { mutableStateOf("80000") }
+    var pv by rememberSaveable { mutableStateOf("100000") }
+    var ac by rememberSaveable { mutableStateOf("90000") }
+    var bac by rememberSaveable { mutableStateOf("200000") }
+    // The four inputs as they stood when Calculate was last pressed. Saving this
+    // rather than the formatted rows carries the results through a rotation while
+    // still leaving them alone as the user edits the fields.
+    var submitted by rememberSaveable { mutableStateOf<String?>(null) }
+    val (metrics, error) = remember(submitted) { evmRows(submitted) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -50,6 +54,25 @@ fun FormulasScreen() {
                 title = "Formulas",
                 subtitle = "Run an EVM example, then memorize SPI, CPI, EAC, and PERT."
             )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                ),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text("Formula drill", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Test your recall of all ${StudyRepository.formulaDrill.questions.size} formulas.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+                    )
+                    Button(onClick = onStartDrill, modifier = Modifier.fillMaxWidth()) {
+                        Text("Start drill")
+                    }
+                }
+            }
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth()
@@ -65,39 +88,11 @@ fun FormulasScreen() {
                         NumberField("BAC", bac, { bac = it }, Modifier.weight(1f))
                     }
                     Button(
-                        onClick = {
-                            runCatching {
-                                val result = EarnedValueMath.compute(
-                                    ev = ev.toDouble(),
-                                    pv = pv.toDouble(),
-                                    ac = ac.toDouble(),
-                                    bac = bac.toDouble()
-                                )
-                                val fmt = { n: Double -> String.format(Locale.US, "%,.2f", n) }
-                                error = null
-                                metrics = listOf(
-                                    "SV" to fmt(result.sv),
-                                    "CV" to fmt(result.cv),
-                                    "SPI" to fmt(result.spi),
-                                    "CPI" to fmt(result.cpi),
-                                    "EAC" to fmt(result.eacTypical),
-                                    "ETC" to fmt(result.etc),
-                                    "VAC" to fmt(result.vac),
-                                    "TCPI" to fmt(result.tcpi)
-                                )
-                            }.onFailure { e ->
-                                metrics = emptyList()
-                                error = when (e) {
-                                    is IllegalArgumentException -> e.message ?: "Invalid input."
-                                    is NumberFormatException -> "Enter numbers only."
-                                    else -> "Calculation failed. Check inputs."
-                                }
-                            }
-                        },
+                        onClick = { submitted = "$ev|$pv|$ac|$bac" },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Calculate") }
                     if (error != null) {
-                        Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
                     if (metrics.isNotEmpty()) {
                         metrics.chunked(2).forEach { pair ->
@@ -142,6 +137,47 @@ fun FormulasScreen() {
             }
         }
     }
+}
+
+/**
+ * Formatted EVM rows for the pipe-joined inputs captured on the last Calculate
+ * press, or the message explaining why they could not be computed.
+ */
+private fun evmRows(submitted: String?): Pair<List<Pair<String, String>>, String?> {
+    val blank = emptyList<Pair<String, String>>()
+    if (submitted == null) return blank to null
+    return runCatching {
+        val f = submitted.split('|')
+        val result = EarnedValueMath.compute(
+            ev = f[0].toDouble(),
+            pv = f[1].toDouble(),
+            ac = f[2].toDouble(),
+            bac = f[3].toDouble()
+        )
+        val fmt = { n: Double -> String.format(Locale.US, "%,.2f", n) }
+        listOf(
+            "SV" to fmt(result.sv),
+            "CV" to fmt(result.cv),
+            "SPI" to fmt(result.spi),
+            "CPI" to fmt(result.cpi),
+            "EAC" to fmt(result.eacTypical),
+            "ETC" to fmt(result.etc),
+            "VAC" to fmt(result.vac),
+            "TCPI" to fmt(result.tcpi)
+        )
+    }.fold(
+        onSuccess = { rows -> rows to null },
+        onFailure = { e ->
+            // NumberFormatException extends IllegalArgumentException, so it has to be
+            // matched first — otherwise an empty field surfaces the raw JDK message
+            // ("For input string: \"\"") instead of the guidance below.
+            blank to when (e) {
+                is NumberFormatException -> "Enter numbers only."
+                is IllegalArgumentException -> e.message ?: "Invalid input."
+                else -> "Calculation failed. Check inputs."
+            }
+        }
+    )
 }
 
 @Composable

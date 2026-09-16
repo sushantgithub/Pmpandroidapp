@@ -1,10 +1,12 @@
 package com.sushant.pmpstudy.ui
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Quiz
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,18 +25,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.ui.screens.ChapterDetailScreen
 import com.sushant.pmpstudy.ui.screens.FormulasScreen
 import com.sushant.pmpstudy.ui.screens.LearnScreen
 import com.sushant.pmpstudy.ui.screens.QuizHubScreen
 import com.sushant.pmpstudy.ui.screens.QuizScreen
+import com.sushant.pmpstudy.ui.screens.SettingsScreen
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
     Tab("learn", "Learn", Icons.AutoMirrored.Outlined.MenuBook),
     Tab("formulas", "Formulas", Icons.Outlined.Calculate),
-    Tab("quiz", "Quiz", Icons.Outlined.Quiz)
+    Tab("quiz", "Quiz", Icons.Outlined.Quiz),
+    Tab("settings", "Settings", Icons.Outlined.Settings)
 )
 
 @Composable
@@ -56,11 +61,13 @@ fun PmpStudyApp() {
                             selected = selected,
                             onClick = {
                                 navController.navigate(tab.route) {
+                                    // Keep each tab's scroll position and search box
+                                    // when switching away and back.
                                     popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = false
+                                        saveState = true
                                     }
                                     launchSingleTop = true
-                                    restoreState = false
+                                    restoreState = true
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
@@ -74,7 +81,11 @@ fun PmpStudyApp() {
         NavHost(
             navController = navController,
             startDestination = "learn",
-            modifier = Modifier.padding(inner)
+            // consumeWindowInsets marks the system-bar insets this Scaffold already
+            // applied as spent. Without it the nested Scaffolds in ChapterDetailScreen
+            // and QuizScreen add the status-bar inset a second time, leaving a visible
+            // gap above their top bars.
+            modifier = Modifier.padding(inner).consumeWindowInsets(inner)
         ) {
             composable("learn") {
                 LearnScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
@@ -90,7 +101,14 @@ fun PmpStudyApp() {
                     onQuiz = { navController.navigate("quiz/take/$id") }
                 )
             }
-            composable("formulas") { FormulasScreen() }
+            composable("formulas") {
+                FormulasScreen(
+                    onStartDrill = {
+                        navController.navigate("quiz/take/${StudyRepository.FORMULA_DRILL_ID}")
+                    }
+                )
+            }
+            composable("settings") { SettingsScreen() }
             composable("quiz") {
                 QuizHubScreen(onOpenPack = { id -> navController.navigate("quiz/take/$id") })
             }
