@@ -152,7 +152,7 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
+            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { index, section ->
                 val callouts = LocalCalloutPalette.current
                 val (bg, fg, accent, badge) = when (section.kind) {
                     SectionKind.BODY -> Quad(
@@ -185,12 +185,19 @@ fun ChapterDetailScreen(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (badge != null) KindBadge(badge)
                             }
-                            Text(
-                                section.heading,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = fg,
-                                modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
-                            )
+                            // A body card and its follow-up callout share one heading in
+                            // the catalog. Printing it on both reads as the title stuttering,
+                            // so the repeat is dropped and the badge carries the context.
+                            val repeatsHeading =
+                                index > 0 && chapter.sections[index - 1].heading == section.heading
+                            if (!repeatsHeading) {
+                                Text(
+                                    section.heading,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = fg,
+                                    modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
+                                )
+                            }
                             StudyContentView(section = section, textColor = fg)
                         }
                     }

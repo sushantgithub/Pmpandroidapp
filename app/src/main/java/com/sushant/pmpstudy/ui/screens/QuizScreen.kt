@@ -62,6 +62,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     // from this (rather than the live `skipped` set) keeps the list from shrinking
     // as questions are answered, so the answer/explanation reveal stays visible.
     var reviewQueue by rememberSaveable(packId) { mutableStateOf(listOf<String>()) }
+    // Survives configuration changes alongside `finished`, so rotating on the
+    // results screen does not record the same attempt again.
+    var recorded by rememberSaveable(packId) { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     Scaffold(
@@ -104,7 +107,10 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
 
             // Save to history
             LaunchedEffect(Unit) {
-                AppState.saveQuizResult(packId, pct, result.correct, result.total)
+                if (!recorded) {
+                    AppState.saveQuizResult(packId, pct, result.correct, result.total)
+                    recorded = true
+                }
             }
 
             Column(
@@ -188,7 +194,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList() },
+                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList(); recorded = false },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(

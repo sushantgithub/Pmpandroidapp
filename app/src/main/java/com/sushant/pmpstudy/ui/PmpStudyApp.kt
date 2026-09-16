@@ -1,5 +1,6 @@
 package com.sushant.pmpstudy.ui
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -78,7 +79,11 @@ fun PmpStudyApp() {
         NavHost(
             navController = navController,
             startDestination = "learn",
-            modifier = Modifier.padding(inner)
+            // consumeWindowInsets marks the system-bar insets this Scaffold already
+            // applied as spent. Without it the nested Scaffolds in ChapterDetailScreen
+            // and QuizScreen add the status-bar inset a second time, leaving a visible
+            // gap above their top bars.
+            modifier = Modifier.padding(inner).consumeWindowInsets(inner)
         ) {
             composable("learn") {
                 LearnScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })

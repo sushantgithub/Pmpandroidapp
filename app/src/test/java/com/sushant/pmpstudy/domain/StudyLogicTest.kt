@@ -57,8 +57,8 @@ class QuizGraderTest {
     }
 
     @Test
-    fun has171PracticeQuestions() {
-        assertEquals(171, StudyRepository.allQuestions.size)
+    fun has165PracticeQuestions() {
+        assertEquals(165, StudyRepository.allQuestions.size)
     }
 
     @Test
@@ -119,7 +119,7 @@ class QuizGraderTest {
         assertTrue(examples >= 20)
         assertEquals(10, StudyRepository.questionsForChapter("casestudies").size)
         assertEquals(6, StudyRepository.questionsForChapter("external-env").size)
-        assertEquals(12, StudyRepository.questionsForChapter("benefits").size)
+        assertEquals(6, StudyRepository.questionsForChapter("benefits").size)
     }
 }
 
@@ -191,7 +191,7 @@ class FormulaDrillTest {
 
     @Test
     fun drillDoesNotInflateTheChapterQuestionCount() {
-        assertEquals(171, StudyRepository.allQuestions.size)
+        assertEquals(165, StudyRepository.allQuestions.size)
         assertTrue(StudyRepository.allQuestions.none { it.id.startsWith("formula-") })
     }
 }
