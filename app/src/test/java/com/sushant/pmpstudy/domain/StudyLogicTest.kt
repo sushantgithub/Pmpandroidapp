@@ -122,6 +122,33 @@ class QuizGraderTest {
     }
 }
 
+class QuizDataIntegrityTest {
+    @Test
+    fun everyQuestionIsWellFormed() {
+        (StudyRepository.allQuestions + StudyRepository.mixedExam.questions).forEach { question ->
+            assertEquals("${question.id} choice count", 4, question.choices.size)
+            assertTrue(
+                "${question.id} correctIndex ${question.correctIndex} out of range",
+                question.correctIndex in question.choices.indices
+            )
+            assertTrue("${question.id} blank prompt", question.prompt.isNotBlank())
+            assertTrue("${question.id} blank explanation", question.explanation.isNotBlank())
+            assertTrue("${question.id} blank choice", question.choices.none { it.isBlank() })
+        }
+    }
+
+    @Test
+    fun everyQuestionBelongsToARealChapter() {
+        val chapterIds = StudyRepository.chapters.map { it.id }.toSet()
+        StudyRepository.allQuestions.forEach { question ->
+            assertTrue(
+                "${question.id} references unknown chapter ${question.chapterId}",
+                question.chapterId in chapterIds
+            )
+        }
+    }
+}
+
 class FormulaDrillTest {
     @Test
     fun coversEveryFormulaInTheCatalog() {
