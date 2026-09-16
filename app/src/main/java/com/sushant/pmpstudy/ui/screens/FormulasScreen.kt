@@ -32,7 +32,7 @@ import com.sushant.pmpstudy.ui.components.ScreenHeader
 import java.util.Locale
 
 @Composable
-fun FormulasScreen() {
+fun FormulasScreen(onStartDrill: () -> Unit) {
     var ev by remember { mutableStateOf("80000") }
     var pv by remember { mutableStateOf("100000") }
     var ac by remember { mutableStateOf("90000") }
@@ -50,6 +50,25 @@ fun FormulasScreen() {
                 title = "Formulas",
                 subtitle = "Run an EVM example, then memorize SPI, CPI, EAC, and PERT."
             )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                ),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text("Formula drill", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Test your recall of all ${StudyRepository.formulaDrill.questions.size} formulas.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+                    )
+                    Button(onClick = onStartDrill, modifier = Modifier.fillMaxWidth()) {
+                        Text("Start drill")
+                    }
+                }
+            }
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth()

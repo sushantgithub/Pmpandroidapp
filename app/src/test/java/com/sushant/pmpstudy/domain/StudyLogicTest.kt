@@ -1,5 +1,6 @@
 package com.sushant.pmpstudy.domain
 
+import com.sushant.pmpstudy.data.FormulaCatalog
 import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -118,5 +119,71 @@ class QuizGraderTest {
         assertEquals(10, StudyRepository.questionsForChapter("casestudies").size)
         assertEquals(6, StudyRepository.questionsForChapter("external-env").size)
         assertEquals(12, StudyRepository.questionsForChapter("benefits").size)
+    }
+}
+
+class FormulaDrillTest {
+    @Test
+    fun coversEveryFormulaInTheCatalog() {
+        assertEquals(FormulaCatalog.all.size, StudyRepository.formulaDrill.questions.size)
+    }
+
+    @Test
+    fun eachQuestionMarksItsOwnFormulaAsCorrect() {
+        StudyRepository.formulaDrill.questions.forEachIndexed { index, question ->
+            val formula = FormulaCatalog.all[index]
+            assertTrue(question.correctIndex in question.choices.indices)
+            assertTrue(question.choices[question.correctIndex].endsWith(formula.expression))
+            assertTrue(question.prompt.contains(formula.name))
+        }
+    }
+
+    @Test
+    fun everyQuestionOffersFourDistinctOptions() {
+        StudyRepository.formulaDrill.questions.forEach { question ->
+            assertEquals(4, question.choices.size)
+            // Drop the "A. " / "B. " prefix before comparing the expressions.
+            val expressions = question.choices.map { it.substring(3) }
+            assertEquals(expressions.size, expressions.toSet().size)
+        }
+    }
+
+    @Test
+    fun drillIsReachableAsAQuizPack() {
+        assertEquals(
+            StudyRepository.formulaDrill,
+            StudyRepository.pack(StudyRepository.FORMULA_DRILL_ID)
+        )
+    }
+
+    @Test
+    fun drillIsDeterministicAcrossAccesses() {
+        assertEquals(StudyRepository.formulaDrill, StudyRepository.formulaDrill)
+    }
+
+    @Test
+    fun drillDoesNotInflateTheChapterQuestionCount() {
+        assertEquals(171, StudyRepository.allQuestions.size)
+        assertTrue(StudyRepository.allQuestions.none { it.id.startsWith("formula-") })
+    }
+}
+
+class DisplaySettingsTest {
+    @Test
+    fun defaultFontScaleIsUnscaled() {
+        assertEquals(1.0f, FontScale.MEDIUM.scale, 0.0001f)
+    }
+
+    @Test
+    fun fontScalesAscendAndStayReadable() {
+        val scales = FontScale.values().map { it.scale }
+        assertEquals(scales.sorted(), scales)
+        assertTrue(scales.all { it in 0.5f..2.0f })
+    }
+
+    @Test
+    fun everyOptionIsLabelled() {
+        assertTrue(FontScale.values().all { it.label.isNotBlank() })
+        assertTrue(ThemeMode.values().all { it.label.isNotBlank() })
     }
 }

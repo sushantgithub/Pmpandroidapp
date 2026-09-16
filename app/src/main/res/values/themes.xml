@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.PmpStudy" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#0B1524</item>
-        <item name="android:navigationBarColor">#0B1524</item>
-        <item name="android:windowBackground">#0B1524</item>
-        <item name="android:windowLightStatusBar">false</item>
+    <!-- Light/default window chrome. values-night/ holds the dark counterpart.
+         Compose draws over this, so it only governs the pre-composition frame. -->
+    <style name="Theme.PmpStudy" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#F7F9FC</item>
+        <item name="android:navigationBarColor">#F7F9FC</item>
+        <item name="android:windowBackground">#F7F9FC</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

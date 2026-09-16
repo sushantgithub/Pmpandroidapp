@@ -1,6 +1,10 @@
 package com.sushant.pmpstudy.data
 
+import kotlin.random.Random
+
 object StudyRepository {
+    const val FORMULA_DRILL_ID = "formulas-drill"
+
     private val chapterOrder = listOf(
         "blueprint",
         "about",
@@ -80,7 +84,47 @@ object StudyRepository {
         questions = QuizBank.mixedTwenty
     )
 
-    val quizPacks: List<QuizPack> = listOf(mixedExam) + chapters.mapNotNull { chapter ->
+    /**
+     * Multiple-choice recall drill generated from [FormulaCatalog]: the formula
+     * name is the prompt, expressions are the options.
+     *
+     * Built with a fixed seed so the option order is stable across launches and
+     * across recompositions — a per-run shuffle would reorder the answers under
+     * the user mid-quiz.
+     */
+    val formulaDrill: QuizPack = buildFormulaDrill()
+
+    private fun buildFormulaDrill(): QuizPack {
+        val source = FormulaCatalog.all
+        val rng = Random(seed = 20260101)
+        val letters = listOf("A. ", "B. ", "C. ", "D. ")
+        val questions = source.mapIndexed { index, formula ->
+            // Expressions are unique across the catalog, so a distractor can never
+            // duplicate the right answer and indexOf resolves unambiguously.
+            val distractors = source
+                .filter { it.expression != formula.expression }
+                .shuffled(rng)
+                .take(letters.size - 1)
+                .map { it.expression }
+            val options = (distractors + formula.expression).shuffled(rng)
+            QuizQuestion(
+                id = "formula-$index",
+                chapterId = FORMULA_DRILL_ID,
+                prompt = "Which formula gives ${formula.name}?",
+                choices = options.mapIndexed { position, expression -> letters[position] + expression },
+                correctIndex = options.indexOf(formula.expression),
+                explanation = "${formula.name} = ${formula.expression}. ${formula.meaning}"
+            )
+        }
+        return QuizPack(
+            id = FORMULA_DRILL_ID,
+            title = "Formula drill",
+            subtitle = "${questions.size} questions · Recall every formula from memory",
+            questions = questions
+        )
+    }
+
+    val quizPacks: List<QuizPack> = listOf(mixedExam, formulaDrill) + chapters.mapNotNull { chapter ->
         val qs = questionsForChapter(chapter.id)
         if (qs.isEmpty()) null
         else QuizPack(
