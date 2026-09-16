@@ -33,27 +33,33 @@ object Settings {
 
     private var prefs: SharedPreferences? = null
 
-    var themeMode by mutableStateOf(ThemeMode.SYSTEM)
-        private set
+    // Backing state is separate from the public property so the setter can
+    // persist as a side effect. A `var` with an explicit setThemeMode() function
+    // instead would clash: both compile to the JVM signature setThemeMode(..).
+    private var themeModeState by mutableStateOf(ThemeMode.SYSTEM)
+    private var fontScaleState by mutableStateOf(FontScale.MEDIUM)
 
-    var fontScale by mutableStateOf(FontScale.MEDIUM)
-        private set
+    var themeMode: ThemeMode
+        get() = themeModeState
+        set(value) {
+            themeModeState = value
+            prefs?.edit()?.putString(KEY_THEME, value.name)?.apply()
+        }
+
+    var fontScale: FontScale
+        get() = fontScaleState
+        set(value) {
+            fontScaleState = value
+            prefs?.edit()?.putString(KEY_FONT, value.name)?.apply()
+        }
 
     fun init(context: Context) {
         val stored = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         prefs = stored
-        themeMode = stored.getString(KEY_THEME, null).toThemeMode()
-        fontScale = stored.getString(KEY_FONT, null).toFontScale()
-    }
-
-    fun setThemeMode(mode: ThemeMode) {
-        themeMode = mode
-        prefs?.edit()?.putString(KEY_THEME, mode.name)?.apply()
-    }
-
-    fun setFontScale(value: FontScale) {
-        fontScale = value
-        prefs?.edit()?.putString(KEY_FONT, value.name)?.apply()
+        // Assign the backing state directly: going through the setters would
+        // immediately write back the values we just read.
+        themeModeState = stored.getString(KEY_THEME, null).toThemeMode()
+        fontScaleState = stored.getString(KEY_FONT, null).toFontScale()
     }
 
     // Unknown/absent values fall back to the default rather than throwing, so a

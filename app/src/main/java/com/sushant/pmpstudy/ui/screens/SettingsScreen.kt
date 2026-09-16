@@ -52,7 +52,7 @@ fun SettingsScreen() {
                     ThemeMode.values().forEach { mode ->
                         FilterChip(
                             selected = Settings.themeMode == mode,
-                            onClick = { Settings.setThemeMode(mode) },
+                            onClick = { Settings.themeMode = mode },
                             label = {
                                 Text(mode.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             },
@@ -75,13 +75,13 @@ fun SettingsScreen() {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { Settings.setFontScale(option) }
+                            .clickable { Settings.fontScale = option }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
                             selected = Settings.fontScale == option,
-                            onClick = { Settings.setFontScale(option) }
+                            onClick = { Settings.fontScale = option }
                         )
                         Column(modifier = Modifier.padding(start = 4.dp)) {
                             Text(option.label, style = MaterialTheme.typography.bodyMedium)
