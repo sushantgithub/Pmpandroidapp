@@ -42,11 +42,8 @@ import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
-import com.sushant.pmpstudy.ui.theme.CalloutDanger
-import com.sushant.pmpstudy.ui.theme.CalloutKey
-import com.sushant.pmpstudy.ui.theme.CalloutNote
-import com.sushant.pmpstudy.ui.theme.CalloutTip
-import com.sushant.pmpstudy.ui.theme.CalloutWarn
+import com.sushant.pmpstudy.ui.theme.CalloutStyle
+import com.sushant.pmpstudy.ui.theme.LocalCalloutPalette
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,6 +153,7 @@ fun ChapterDetailScreen(
                 }
             }
             itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { _, section ->
+                val callouts = LocalCalloutPalette.current
                 val (bg, fg, accent, badge) = when (section.kind) {
                     SectionKind.BODY -> Quad(
                         MaterialTheme.colorScheme.surfaceVariant,
@@ -163,11 +161,11 @@ fun ChapterDetailScreen(
                         MaterialTheme.colorScheme.primary,
                         null
                     )
-                    SectionKind.NOTE -> Quad(CalloutNote, Color(0xFFD6E4FF), Color(0xFF7EB6FF), "NOTE")
-                    SectionKind.TIP -> Quad(CalloutTip, Color(0xFFD1FAE5), Color(0xFF3DDC97), "TIP")
-                    SectionKind.WARN -> Quad(CalloutWarn, Color(0xFFFEF3C7), Color(0xFFE8C547), "WATCH")
-                    SectionKind.DANGER -> Quad(CalloutDanger, Color(0xFFFECACA), Color(0xFFFF8A8A), "EXAM TRAP")
-                    SectionKind.KEY -> Quad(CalloutKey, Color(0xFFEDE9FE), Color(0xFFC4B5FD), "KEY")
+                    SectionKind.NOTE -> callouts.note.quad("NOTE")
+                    SectionKind.TIP -> callouts.tip.quad("TIP")
+                    SectionKind.WARN -> callouts.warn.quad("WATCH")
+                    SectionKind.DANGER -> callouts.danger.quad("EXAM TRAP")
+                    SectionKind.KEY -> callouts.key.quad("KEY")
                 }
                 Card(
                     colors = CardDefaults.cardColors(containerColor = bg),
@@ -201,6 +199,8 @@ fun ChapterDetailScreen(
         }
     }
 }
+
+private fun CalloutStyle.quad(badge: String) = Quad(bg, fg, accent, badge)
 
 private data class Quad(
     val bg: Color,
