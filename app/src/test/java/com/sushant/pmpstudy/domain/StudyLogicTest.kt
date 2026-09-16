@@ -3,6 +3,7 @@ package com.sushant.pmpstudy.domain
 import com.sushant.pmpstudy.data.FormulaCatalog
 import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -29,7 +30,7 @@ class QuizGraderTest {
     @Test
     fun packLookupIsCached() {
         assertEquals(StudyRepository.quizPacks, StudyRepository.quizPacks)
-        assertEquals(20, StudyRepository.pack("mixed")?.questions?.size)
+        assertNull(StudyRepository.pack("mixed"))
     }
 
     @Test
@@ -40,11 +41,11 @@ class QuizGraderTest {
     }
 
     @Test
-    fun perfectScoreOnMixed() {
-        val pack = StudyRepository.mixedExam
+    fun perfectScoreOnFormulaDrill() {
+        val pack = StudyRepository.formulaDrill
         val answers = pack.questions.associate { it.id to it.correctIndex }
         val result = QuizGrader.grade(pack.questions, answers)
-        assertEquals(20, result.correct)
+        assertEquals(pack.questions.size, result.correct)
         assertEquals(100, result.percent)
     }
 
@@ -125,7 +126,7 @@ class QuizGraderTest {
 class QuizDataIntegrityTest {
     @Test
     fun everyQuestionIsWellFormed() {
-        (StudyRepository.allQuestions + StudyRepository.mixedExam.questions).forEach { question ->
+        StudyRepository.allQuestions.forEach { question ->
             assertEquals("${question.id} choice count", 4, question.choices.size)
             assertTrue(
                 "${question.id} correctIndex ${question.correctIndex} out of range",

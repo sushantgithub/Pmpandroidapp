@@ -77,13 +77,6 @@ object StudyRepository {
     fun questionsForChapter(chapterId: String): List<QuizQuestion> =
         allQuestions.filter { it.chapterId == chapterId }
 
-    val mixedExam: QuizPack = QuizPack(
-        id = "mixed",
-        title = "Mixed exam set",
-        subtitle = "20 questions across People, Process, Business Environment & Agile",
-        questions = QuizBank.mixedTwenty
-    )
-
     /**
      * Multiple-choice recall drill generated from [FormulaCatalog]: the formula
      * name is the prompt, expressions are the options.
@@ -124,7 +117,7 @@ object StudyRepository {
         )
     }
 
-    val quizPacks: List<QuizPack> = listOf(mixedExam, formulaDrill) + chapters.mapNotNull { chapter ->
+    val quizPacks: List<QuizPack> = listOf(formulaDrill) + chapters.mapNotNull { chapter ->
         val qs = questionsForChapter(chapter.id)
         if (qs.isEmpty()) null
         else QuizPack(

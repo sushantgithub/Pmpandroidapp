@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
-import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScreenHeader
 
 @Composable
@@ -36,16 +35,14 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
         item {
             ScreenHeader(
                 title = "Practice quizzes",
-                subtitle = "${StudyRepository.allQuestions.size} original questions. Start with the mixed set, then drill a chapter."
+                subtitle = "${StudyRepository.allQuestions.size} original questions across all chapters."
             )
         }
         items(packs, key = { it.id }) { pack ->
-            val featured = pack.id == "mixed"
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onOpenPack(pack.id) },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (featured) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    else MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Row(
@@ -53,9 +50,6 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        if (featured) {
-                            KindBadge("START HERE", modifier = Modifier.padding(bottom = 8.dp))
-                        }
                         Text(pack.title, style = MaterialTheme.typography.titleMedium)
                         Text(
                             pack.subtitle,
