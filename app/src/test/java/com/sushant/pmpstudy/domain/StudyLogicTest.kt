@@ -139,6 +139,18 @@ class QuizDataIntegrityTest {
     }
 
     @Test
+    fun questionCountAgreesWithTheFilteredList() {
+        StudyRepository.chapters.forEach { chapter ->
+            assertEquals(
+                "count mismatch for ${chapter.id}",
+                StudyRepository.questionsForChapter(chapter.id).size,
+                StudyRepository.questionCount(chapter.id)
+            )
+        }
+        assertEquals(0, StudyRepository.questionCount("no-such-chapter"))
+    }
+
+    @Test
     fun everyQuestionBelongsToARealChapter() {
         val chapterIds = StudyRepository.chapters.map { it.id }.toSet()
         StudyRepository.allQuestions.forEach { question ->

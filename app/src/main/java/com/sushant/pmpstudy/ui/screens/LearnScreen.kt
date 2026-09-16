@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Search
@@ -50,7 +50,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        state = remember { LazyListState() },
+        state = rememberLazyListState(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -96,7 +96,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 )
             }
             items(chapters, key = { it.id }) { chapter ->
-                val n = StudyRepository.questionsForChapter(chapter.id).size
+                val n = StudyRepository.questionCount(chapter.id)
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onOpenChapter(chapter.id) },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),

@@ -61,11 +61,13 @@ fun PmpStudyApp() {
                             selected = selected,
                             onClick = {
                                 navController.navigate(tab.route) {
+                                    // Keep each tab's scroll position and search box
+                                    // when switching away and back.
                                     popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = false
+                                        saveState = true
                                     }
                                     launchSingleTop = true
-                                    restoreState = false
+                                    restoreState = true
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },

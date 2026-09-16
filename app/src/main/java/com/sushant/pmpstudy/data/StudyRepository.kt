@@ -77,6 +77,18 @@ object StudyRepository {
     fun questionsForChapter(chapterId: String): List<QuizQuestion> =
         allQuestions.filter { it.chapterId == chapterId }
 
+    private val questionCounts: Map<String, Int> =
+        allQuestions.groupingBy { it.chapterId }.eachCount()
+
+    /**
+     * Question count for a chapter, without walking the whole bank.
+     *
+     * The chapter list renders one card per chapter and the detail screen reads
+     * this on every recomposition, so the filtering version turned each keystroke
+     * in the search box into a full scan per visible card.
+     */
+    fun questionCount(chapterId: String): Int = questionCounts[chapterId] ?: 0
+
     /**
      * Multiple-choice recall drill generated from [FormulaCatalog]: the formula
      * name is the prompt, expressions are the options.

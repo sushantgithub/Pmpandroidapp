@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -54,8 +54,8 @@ fun ChapterDetailScreen(
     onQuiz: () -> Unit
 ) {
     val chapter = StudyRepository.chapter(chapterId)
-    val quizCount = StudyRepository.questionsForChapter(chapterId).size
-    val listState = remember { LazyListState() }
+    val quizCount = StudyRepository.questionCount(chapterId)
+    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val toc = remember(chapter) {
         chapter?.sections
