@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.QuizGrader
+import com.sushant.pmpstudy.ui.components.KindBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +66,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     // Survives configuration changes alongside `finished`, so rotating on the
     // results screen does not record the same attempt again.
     var recorded by rememberSaveable(packId) { mutableStateOf(false) }
+    var isPersonalBest by rememberSaveable(packId) { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     Scaffold(
@@ -108,7 +110,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
             // Save to history
             LaunchedEffect(Unit) {
                 if (!recorded) {
-                    AppState.saveQuizResult(packId, pct, result.correct, result.total)
+                    isPersonalBest = AppState.saveQuizResult(packId, pct)
                     recorded = true
                 }
             }
@@ -140,6 +142,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
+                if (isPersonalBest && (AppState.progressFor(packId)?.attempts ?: 0) > 1) {
+                    KindBadge("NEW BEST", modifier = Modifier.padding(bottom = 8.dp))
+                }
                 Text(
                     when {
                         pct >= 80 -> "Strong performance 🎉"
@@ -194,7 +199,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList(); recorded = false },
+                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList(); recorded = false; isPersonalBest = false },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(

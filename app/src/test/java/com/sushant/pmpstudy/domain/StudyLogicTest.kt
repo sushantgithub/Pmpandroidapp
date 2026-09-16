@@ -3,8 +3,10 @@ package com.sushant.pmpstudy.domain
 import com.sushant.pmpstudy.data.FormulaCatalog
 import com.sushant.pmpstudy.data.StudyRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class EarnedValueMathTest {
@@ -205,6 +207,67 @@ class FormulaDrillTest {
     fun drillDoesNotInflateTheChapterQuestionCount() {
         assertEquals(165, StudyRepository.allQuestions.size)
         assertTrue(StudyRepository.allQuestions.none { it.id.startsWith("formula-") })
+    }
+}
+
+/**
+ * AppState without [AppState.init]: no SharedPreferences is attached, so writes
+ * stay in memory and the in-memory bookkeeping is what these exercise.
+ */
+class ProgressTest {
+
+    @Before
+    fun clearProgress() = AppState.reset()
+
+    @Test
+    fun firstAttemptCountsAsABest() {
+        assertTrue(AppState.saveQuizResult("scope", 55))
+        val progress = AppState.progressFor("scope")
+        assertEquals(55, progress?.bestPercent)
+        assertEquals(55, progress?.lastPercent)
+        assertEquals(1, progress?.attempts)
+    }
+
+    @Test
+    fun bestKeepsTheHighScoreWhileLastFollowsEveryAttempt() {
+        AppState.saveQuizResult("scope", 80)
+        assertTrue("a higher score is a new best", AppState.saveQuizResult("scope", 90))
+        assertFalse("a lower score is not", AppState.saveQuizResult("scope", 40))
+
+        val progress = AppState.progressFor("scope")
+        assertEquals(90, progress?.bestPercent)
+        assertEquals(40, progress?.lastPercent)
+        assertEquals(3, progress?.attempts)
+    }
+
+    @Test
+    fun matchingThePreviousBestIsNotANewBest() {
+        AppState.saveQuizResult("risk", 70)
+        assertFalse(AppState.saveQuizResult("risk", 70))
+        assertEquals(70, AppState.progressFor("risk")?.bestPercent)
+    }
+
+    @Test
+    fun averageSpansEveryAttemptedPackAndIgnoresTheRest() {
+        assertNull(AppState.averageBest)
+        assertEquals(0, AppState.attemptedPacks)
+
+        AppState.saveQuizResult("scope", 90)
+        AppState.saveQuizResult("risk", 61)
+
+        assertEquals(2, AppState.attemptedPacks)
+        // Mean of the bests, rounded: (90 + 61) / 2 = 75.5 -> 76
+        assertEquals(76, AppState.averageBest)
+        assertNull(AppState.progressFor("never-attempted"))
+    }
+
+    @Test
+    fun resetClearsEverything() {
+        AppState.saveQuizResult("scope", 90)
+        AppState.reset()
+        assertEquals(0, AppState.attemptedPacks)
+        assertNull(AppState.averageBest)
+        assertNull(AppState.progressFor("scope"))
     }
 }
 

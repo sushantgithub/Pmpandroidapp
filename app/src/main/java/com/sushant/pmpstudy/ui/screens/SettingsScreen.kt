@@ -9,19 +9,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.FontScale
 import com.sushant.pmpstudy.domain.Settings
 import com.sushant.pmpstudy.domain.ThemeMode
@@ -34,6 +44,14 @@ private const val PREVIEW_TEXT =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen() {
+    val context = LocalContext.current
+    val versionName = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "2.4.0"
+    }
+    var confirmReset by rememberSaveable { mutableStateOf(false) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -99,6 +117,27 @@ fun SettingsScreen() {
         }
 
         item {
+            SettingsCard(title = "Progress") {
+                val done = AppState.attemptedPacks
+                Text(
+                    if (done == 0) {
+                        "No quizzes attempted yet. Scores appear here once you finish one."
+                    } else {
+                        "$done quiz ${if (done == 1) "set" else "sets"} attempted · " +
+                            "${AppState.averageBest}% average best score."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(
+                    onClick = { confirmReset = true },
+                    enabled = done > 0,
+                    modifier = Modifier.padding(top = 12.dp)
+                ) { Text("Reset progress") }
+            }
+        }
+
+        item {
             SettingsCard(title = "Preview") {
                 Text(PREVIEW_TEXT, style = MaterialTheme.typography.bodyMedium)
                 Text(
@@ -112,13 +151,37 @@ fun SettingsScreen() {
 
         item {
             Text(
-                "PMP® Prep Guide · Independent study resource. Not affiliated with, " +
-                    "endorsed by, or sponsored by PMI.",
+                "PMP® Prep Guide v$versionName · Independent study resource. Not affiliated " +
+                    "with, endorsed by, or sponsored by PMI.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
         }
+    }
+
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text("Reset progress?") },
+            text = {
+                Text(
+                    "This clears every recorded quiz score. Your notes, settings and " +
+                        "questions are not affected."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        AppState.reset()
+                        confirmReset = false
+                    }
+                ) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 

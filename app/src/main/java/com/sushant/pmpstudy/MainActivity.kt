@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.toArgb
+import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.Settings
 import com.sushant.pmpstudy.ui.PmpStudyApp
 import com.sushant.pmpstudy.ui.theme.DarkBar
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
         // Load display preferences before the first composition so the app does
         // not flash the default theme before the user's choice is applied.
         Settings.init(applicationContext)
+        AppState.init(applicationContext)
         super.onCreate(savedInstanceState)
         setContent {
             val dark = isAppInDarkTheme()
