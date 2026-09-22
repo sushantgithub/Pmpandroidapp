@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
@@ -25,9 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -44,6 +46,8 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
     val filtered = remember(query) { StudyRepository.search(query) }
     val grouped = filtered.groupBy { it.category }
     val quizCount = StudyRepository.allQuestions.size
+    val totalChapters = StudyRepository.chapters.size
+    val readCount = AppState.readChapterIds.size
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -58,7 +62,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
             )
             StatRow(
                 items = listOf(
-                    StudyRepository.chapters.size.toString() to "Chapters",
+                    "$readCount/$totalChapters" to "Read",
                     quizCount.toString() to "Questions",
                     (AppState.averageBest?.let { "$it%" } ?: "—") to "Avg best"
                 ),
@@ -80,6 +84,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 }
             )
         }
+
         if (filtered.isEmpty()) {
             item {
                 Text(
@@ -90,6 +95,7 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                 )
             }
         }
+
         grouped.forEach { (category, chapters) ->
             item(key = "h-$category") {
                 Text(
@@ -99,12 +105,21 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                     modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)
                 )
             }
+
             items(chapters, key = { it.id }) { chapter ->
                 val n = StudyRepository.questionCount(chapter.id)
                 val progress = AppState.progressFor(chapter.id)
+                val isRead = AppState.isRead(chapter.id)
+
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onOpenChapter(chapter.id) },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isRead) {
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Row(
@@ -137,11 +152,21 @@ fun LearnScreen(onOpenChapter: (String) -> Unit) {
                                 }
                             }
                         }
-                        Icon(
-                            Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        if (isRead) {
+                            Icon(
+                                Icons.Outlined.CheckCircle,
+                                contentDescription = "Read",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                                contentDescription = "Open",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
