@@ -130,7 +130,7 @@ class QuizGraderTest {
         }
         assertTrue(examples >= 20)
         assertEquals(10, StudyRepository.questionsForChapter("casestudies").size)
-        assertEquals(6, StudyRepository.questionsForChapter("external-env").size)
+        assertEquals(7, StudyRepository.questionsForChapter("external-env").size)
         assertEquals(6, StudyRepository.questionsForChapter("benefits").size)
     }
 }
