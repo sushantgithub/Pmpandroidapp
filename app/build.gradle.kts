@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.sushant.pmpstudy"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.sushant.pmpstudy"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 31
-        versionName = "2.7.0"
+        targetSdk = 36
+        versionCode = 32
+        versionName = "2.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -22,7 +22,6 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
