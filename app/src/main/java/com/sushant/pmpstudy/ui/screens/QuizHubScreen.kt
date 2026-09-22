@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.AppState
+import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.ScoreBar
 import com.sushant.pmpstudy.ui.components.ScreenHeader
 
@@ -50,7 +51,11 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onOpenPack(pack.id) },
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = if (pack.examMode) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
                 )
             ) {
                 Row(
@@ -58,6 +63,12 @@ fun QuizHubScreen(onOpenPack: (String) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
+                        if (pack.examMode) {
+                            KindBadge(
+                                label = "EXAM MODE",
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                        }
                         Text(pack.title, style = MaterialTheme.typography.titleMedium)
                         Text(
                             pack.subtitle,
