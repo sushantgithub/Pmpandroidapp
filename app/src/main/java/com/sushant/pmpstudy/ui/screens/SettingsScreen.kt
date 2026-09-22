@@ -48,7 +48,7 @@ fun SettingsScreen() {
     val versionName = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull() ?: "2.4.0"
+        }.getOrNull() ?: "2.7.0"
     }
     var confirmReset by rememberSaveable { mutableStateOf(false) }
 
