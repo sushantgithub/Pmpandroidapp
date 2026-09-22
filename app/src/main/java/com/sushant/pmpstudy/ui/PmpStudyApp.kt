@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material.icons.outlined.Settings
@@ -26,6 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.ui.screens.BookmarksScreen
 import com.sushant.pmpstudy.ui.screens.ChapterDetailScreen
 import com.sushant.pmpstudy.ui.screens.FormulasScreen
 import com.sushant.pmpstudy.ui.screens.LearnScreen
@@ -39,6 +41,7 @@ private val tabs = listOf(
     Tab("learn", "Learn", Icons.AutoMirrored.Outlined.MenuBook),
     Tab("formulas", "Formulas", Icons.Outlined.Calculate),
     Tab("quiz", "Quiz", Icons.Outlined.Quiz),
+    Tab("bookmarks", "Bookmarks", Icons.Outlined.Bookmark),
     Tab("settings", "Settings", Icons.Outlined.Settings)
 )
 
@@ -61,8 +64,7 @@ fun PmpStudyApp() {
                             selected = selected,
                             onClick = {
                                 navController.navigate(tab.route) {
-                                    // Keep each tab's scroll position and search box
-                                    // when switching away and back.
+                                    // Preserve each top-level tab's scroll/search state.
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -81,26 +83,32 @@ fun PmpStudyApp() {
         NavHost(
             navController = navController,
             startDestination = "learn",
-            // consumeWindowInsets marks the system-bar insets this Scaffold already
-            // applied as spent. Without it the nested Scaffolds in ChapterDetailScreen
-            // and QuizScreen add the status-bar inset a second time, leaving a visible
-            // gap above their top bars.
             modifier = Modifier.padding(inner).consumeWindowInsets(inner)
         ) {
             composable("learn") {
                 LearnScreen(onOpenChapter = { id -> navController.navigate("chapter/$id") })
             }
+
             composable(
-                route = "chapter/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType })
+                route = "chapter/{id}?section={section}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType },
+                    navArgument("section") {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    }
+                )
             ) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
+                val section = entry.arguments?.getInt("section") ?: -1
                 ChapterDetailScreen(
                     chapterId = id,
+                    initialSection = section,
                     onBack = { navController.popBackStack() },
                     onQuiz = { navController.navigate("quiz/take/$id") }
                 )
             }
+
             composable("formulas") {
                 FormulasScreen(
                     onStartDrill = {
@@ -108,16 +116,29 @@ fun PmpStudyApp() {
                     }
                 )
             }
-            composable("settings") { SettingsScreen() }
+
             composable("quiz") {
                 QuizHubScreen(onOpenPack = { id -> navController.navigate("quiz/take/$id") })
             }
+
             composable(
                 route = "quiz/take/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 QuizScreen(packId = id, onBack = { navController.popBackStack() })
+            }
+
+            composable("bookmarks") {
+                BookmarksScreen(
+                    onOpenChapter = { chapterId, sectionIndex ->
+                        navController.navigate("chapter/$chapterId?section=$sectionIndex")
+                    }
+                )
+            }
+
+            composable("settings") {
+                SettingsScreen()
             }
         }
     }
