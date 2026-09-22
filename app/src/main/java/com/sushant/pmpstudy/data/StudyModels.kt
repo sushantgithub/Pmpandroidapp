@@ -40,5 +40,7 @@ data class QuizPack(
     val id: String,
     val title: String,
     val subtitle: String,
-    val questions: List<QuizQuestion>
+    val questions: List<QuizQuestion>,
+    val examMode: Boolean = false,
+    val timeLimitMinutes: Int? = null
 )
