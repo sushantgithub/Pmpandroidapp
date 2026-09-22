@@ -32,7 +32,7 @@ class QuizGraderTest {
     @Test
     fun packLookupIsCached() {
         assertEquals(StudyRepository.quizPacks, StudyRepository.quizPacks)
-        assertNull(StudyRepository.pack("mixed"))
+        assertEquals(StudyRepository.fullExam, StudyRepository.pack(StudyRepository.FULL_EXAM_ID))
     }
 
     @Test
@@ -59,8 +59,18 @@ class QuizGraderTest {
     }
 
     @Test
-    fun has165PracticeQuestions() {
-        assertEquals(165, StudyRepository.allQuestions.size)
+    fun fullExamUsesEveryUniqueQuestionAndCorrectTiming() {
+        val exam = StudyRepository.fullExam
+        assertTrue(exam.examMode)
+        assertEquals(240, exam.timeLimitMinutes)
+        assertEquals(180, exam.questions.size)
+        assertEquals(180, exam.questions.map { it.id }.toSet().size)
+        assertEquals(StudyRepository.allQuestions.map { it.id }.toSet(), exam.questions.map { it.id }.toSet())
+    }
+
+    @Test
+    fun has180PracticeQuestions() {
+        assertEquals(180, StudyRepository.allQuestions.size)
     }
 
     @Test
@@ -205,7 +215,7 @@ class FormulaDrillTest {
 
     @Test
     fun drillDoesNotInflateTheChapterQuestionCount() {
-        assertEquals(165, StudyRepository.allQuestions.size)
+        assertEquals(180, StudyRepository.allQuestions.size)
         assertTrue(StudyRepository.allQuestions.none { it.id.startsWith("formula-") })
     }
 }
