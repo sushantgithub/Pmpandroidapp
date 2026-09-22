@@ -269,6 +269,43 @@ class ProgressTest {
         assertNull(AppState.averageBest)
         assertNull(AppState.progressFor("scope"))
     }
+
+    @Test
+    fun readingAndBookmarksToggleIndependently() {
+        AppState.markUnread("scope")
+        if (AppState.isBookmarked("scope", 0)) AppState.toggleBookmark("scope", 0)
+
+        AppState.markRead("scope")
+        AppState.toggleBookmark("scope", 0)
+
+        assertTrue(AppState.isRead("scope"))
+        assertTrue(AppState.isBookmarked("scope", 0))
+
+        AppState.markUnread("scope")
+        AppState.toggleBookmark("scope", 0)
+
+        assertFalse(AppState.isRead("scope"))
+        assertFalse(AppState.isBookmarked("scope", 0))
+    }
+
+    @Test
+    fun quizResetPreservesReadingAndBookmarks() {
+        AppState.markUnread("risk")
+        if (AppState.isBookmarked("risk", 1)) AppState.toggleBookmark("risk", 1)
+
+        AppState.markRead("risk")
+        AppState.toggleBookmark("risk", 1)
+        AppState.saveQuizResult("risk", 85)
+
+        AppState.reset()
+
+        assertNull(AppState.progressFor("risk"))
+        assertTrue(AppState.isRead("risk"))
+        assertTrue(AppState.isBookmarked("risk", 1))
+
+        AppState.markUnread("risk")
+        AppState.toggleBookmark("risk", 1)
+    }
 }
 
 class DisplaySettingsTest {
