@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +19,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,14 +29,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -40,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sushant.pmpstudy.data.SectionKind
 import com.sushant.pmpstudy.data.StudyRepository
+import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.ui.components.KindBadge
 import com.sushant.pmpstudy.ui.components.StudyContentView
 import com.sushant.pmpstudy.ui.theme.CalloutStyle
@@ -50,6 +61,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChapterDetailScreen(
     chapterId: String,
+    initialSection: Int = -1,
     onBack: () -> Unit,
     onQuiz: () -> Unit
 ) {
@@ -64,6 +76,37 @@ fun ChapterDetailScreen(
             ?.take(12)
             .orEmpty()
     }
+    val hasToc = toc.size > 3
+    val sectionStartIndex = 1 + if (hasToc) 1 else 0
+    val sectionCount = chapter?.sections?.size ?: 0
+    val isRead = AppState.isRead(chapterId)
+
+    LaunchedEffect(initialSection, chapterId, sectionStartIndex, sectionCount) {
+        if (initialSection in 0 until sectionCount) {
+            listState.scrollToItem(sectionStartIndex + initialSection)
+        }
+    }
+
+    val readingProgress by remember(listState, sectionStartIndex, sectionCount) {
+        derivedStateOf {
+            when {
+                sectionCount == 0 -> 0f
+                sectionCount == 1 -> if (listState.firstVisibleItemIndex >= sectionStartIndex) 1f else 0f
+                else -> {
+                    val visibleSection = (listState.firstVisibleItemIndex - sectionStartIndex)
+                        .coerceIn(0, sectionCount - 1)
+                    visibleSection.toFloat() / (sectionCount - 1).toFloat()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(readingProgress, chapterId) {
+        if (chapter != null && readingProgress >= 0.80f) {
+            AppState.markRead(chapterId)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -79,6 +122,16 @@ fun ChapterDetailScreen(
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    if (isRead) {
+                        Icon(
+                            Icons.Outlined.CheckCircle,
+                            contentDescription = "Marked as read",
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(end = 12.dp).size(20.dp)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
@@ -86,15 +139,38 @@ fun ChapterDetailScreen(
             )
         },
         bottomBar = {
-            if (quizCount > 0 && chapter != null) {
-                Box(
+            if (chapter != null) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = onQuiz, modifier = Modifier.fillMaxWidth()) {
-                        Text("Practice $quizCount questions")
+                    LinearProgressIndicator(
+                        progress = { readingProgress },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                if (isRead) AppState.markUnread(chapterId)
+                                else AppState.markRead(chapterId)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(if (isRead) "Mark unread" else "Mark as read")
+                        }
+                        if (quizCount > 0) {
+                            Button(
+                                onClick = onQuiz,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Practice $quizCount Qs")
+                            }
+                        }
                     }
                 }
             }
@@ -104,6 +180,7 @@ fun ChapterDetailScreen(
             Text("Chapter not found.", modifier = Modifier.padding(inner).padding(16.dp))
             return@Scaffold
         }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(inner),
             state = listState,
@@ -123,7 +200,8 @@ fun ChapterDetailScreen(
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
-            if (toc.size > 3) {
+
+            if (hasToc) {
                 item {
                     Text(
                         "Jump to",
@@ -137,7 +215,7 @@ fun ChapterDetailScreen(
                                 selected = false,
                                 onClick = {
                                     scope.launch {
-                                        listState.animateScrollToItem(pair.second + 2)
+                                        listState.animateScrollToItem(sectionStartIndex + pair.second)
                                     }
                                 },
                                 label = {
@@ -152,8 +230,13 @@ fun ChapterDetailScreen(
                     }
                 }
             }
-            itemsIndexed(chapter.sections, key = { index, _ -> "${chapter.id}-$index" }) { index, section ->
+
+            itemsIndexed(
+                chapter.sections,
+                key = { index, _ -> "${chapter.id}-$index" }
+            ) { index, section ->
                 val callouts = LocalCalloutPalette.current
+                val bookmarked = AppState.isBookmarked(chapterId, index)
                 val (bg, fg, accent, badge) = when (section.kind) {
                     SectionKind.BODY -> Quad(
                         MaterialTheme.colorScheme.surfaceVariant,
@@ -167,6 +250,7 @@ fun ChapterDetailScreen(
                     SectionKind.DANGER -> callouts.danger.quad("EXAM TRAP")
                     SectionKind.KEY -> callouts.key.quad("KEY")
                 }
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = bg),
                     modifier = Modifier.fillMaxWidth(),
@@ -182,22 +266,58 @@ fun ChapterDetailScreen(
                                 .background(accent)
                         )
                         Column(Modifier.padding(14.dp).weight(1f)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (badge != null) KindBadge(badge)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    if (badge != null) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            KindBadge(badge)
+                                        }
+                                    }
+
+                                    // A body card and its follow-up callout can share one
+                                    // heading. Avoid visually repeating that heading twice.
+                                    val repeatsHeading =
+                                        index > 0 && chapter.sections[index - 1].heading == section.heading
+                                    if (!repeatsHeading) {
+                                        Text(
+                                            section.heading,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = fg,
+                                            modifier = Modifier.padding(
+                                                top = if (badge != null) 8.dp else 0.dp
+                                            )
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = { AppState.toggleBookmark(chapterId, index) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (bookmarked) {
+                                            Icons.Outlined.Bookmark
+                                        } else {
+                                            Icons.Outlined.BookmarkBorder
+                                        },
+                                        contentDescription = if (bookmarked) {
+                                            "Remove bookmark"
+                                        } else {
+                                            "Bookmark section"
+                                        },
+                                        tint = if (bookmarked) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
-                            // A body card and its follow-up callout share one heading in
-                            // the catalog. Printing it on both reads as the title stuttering,
-                            // so the repeat is dropped and the badge carries the context.
-                            val repeatsHeading =
-                                index > 0 && chapter.sections[index - 1].heading == section.heading
-                            if (!repeatsHeading) {
-                                Text(
-                                    section.heading,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = fg,
-                                    modifier = Modifier.padding(top = if (badge != null) 8.dp else 0.dp)
-                                )
-                            }
+
                             StudyContentView(section = section, textColor = fg)
                         }
                     }
