@@ -48,12 +48,14 @@ import com.sushant.pmpstudy.data.StudyRepository
 import com.sushant.pmpstudy.domain.AppState
 import com.sushant.pmpstudy.domain.QuizGrader
 import com.sushant.pmpstudy.ui.components.KindBadge
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(packId: String, onBack: () -> Unit) {
     val pack      = StudyRepository.pack(packId)
     val questions = pack?.questions.orEmpty()
+    val examMode  = pack?.examMode == true
     var answers   by rememberSaveable(packId) { mutableStateOf(mapOf<String, Int>()) }
     var index     by rememberSaveable(packId) { mutableIntStateOf(0) }
     var finished  by rememberSaveable(packId) { mutableStateOf(false) }
@@ -67,7 +69,18 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
     // results screen does not record the same attempt again.
     var recorded by rememberSaveable(packId) { mutableStateOf(false) }
     var isPersonalBest by rememberSaveable(packId) { mutableStateOf(false) }
+    var remainingSeconds by rememberSaveable(packId) {
+        mutableIntStateOf((pack?.timeLimitMinutes ?: 0) * 60)
+    }
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(examMode, finished, remainingSeconds) {
+        if (examMode && !finished && remainingSeconds > 0) {
+            delay(1_000)
+            remainingSeconds -= 1
+            if (remainingSeconds <= 0) finished = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -155,7 +168,9 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 )
                 Text(
                     when {
-                        pct >= 80 -> "Review the questions you missed, then try the mixed exam."
+                        examMode && pct >= 80 -> "Review missed questions and use the chapter results to target weak areas."
+                        examMode -> "Review missed questions, revisit weak chapters, then take another timed attempt."
+                        pct >= 80 -> "Review the questions you missed, then try the full-length exam practice."
                         pct >= 60 -> "Re-read the weak chapter sections, then retry this quiz."
                         else      -> "Study the explanations carefully, then attempt again."
                     },
@@ -199,7 +214,17 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick  = { answers = emptyMap(); index = 0; finished = false; skipped = emptySet(); reviewingSkipped = false; reviewQueue = emptyList(); recorded = false; isPersonalBest = false },
+                    onClick  = {
+                        answers = emptyMap()
+                        index = 0
+                        finished = false
+                        skipped = emptySet()
+                        reviewingSkipped = false
+                        reviewQueue = emptyList()
+                        recorded = false
+                        isPersonalBest = false
+                        remainingSeconds = (pack.timeLimitMinutes ?: 0) * 60
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Try again") }
                 OutlinedButton(
@@ -219,7 +244,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
         val safeIndex   = index.coerceIn(0, activeQuestions.lastIndex)
         val question    = activeQuestions[safeIndex]
         val selected    = answers[question.id]
-        val revealed    = selected != null
+        val revealed    = selected != null && !examMode
         val isSkipped   = question.id in skipped
         val progress    = (safeIndex + 1f) / activeQuestions.size
 
@@ -239,7 +264,14 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     color    = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
-                if (skipped.isNotEmpty() && !reviewingSkipped) {
+                if (examMode) {
+                    Text(
+                        formatRemaining(remainingSeconds),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (remainingSeconds <= 600) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (skipped.isNotEmpty() && !reviewingSkipped) {
                     Text(
                         "${skipped.size} skipped",
                         style = MaterialTheme.typography.labelSmall,
@@ -297,12 +329,14 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     Card(
                         colors    = CardDefaults.cardColors(containerColor = container),
                         elevation = CardDefaults.cardElevation(defaultElevation = if (!revealed) 1.dp else 0.dp),
-                        modifier  = Modifier.fillMaxWidth().clickable(enabled = !revealed) {
+                        modifier  = Modifier.fillMaxWidth().clickable(enabled = examMode || !revealed) {
                             answers = answers + (question.id to choiceIndex)
-                            if (choiceIndex == question.correctIndex) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            } else {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            if (!examMode) {
+                                if (choiceIndex == question.correctIndex) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                } else {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
                             }
                             // Auto-remove from skipped when answered. The review list is
                             // driven by reviewQueue (a stable snapshot), so removing the id
@@ -371,7 +405,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                     ) { Text("Prev") }
                 }
                 // Skip button — only when not yet answered
-                if (!revealed && !reviewingSkipped) {
+                if (selected == null && !reviewingSkipped) {
                     OutlinedButton(
                         onClick  = {
                             skipped = skipped + question.id
@@ -409,7 +443,7 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
                             index = safeIndex + 1
                         }
                     },
-                    enabled  = revealed,
+                    enabled  = if (examMode) selected != null else revealed,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
@@ -423,4 +457,12 @@ fun QuizScreen(packId: String, onBack: () -> Unit) {
             }
         }
     }
+}
+
+private fun formatRemaining(seconds: Int): String {
+    val safe = seconds.coerceAtLeast(0)
+    val hours = safe / 3600
+    val minutes = (safe % 3600) / 60
+    val secs = safe % 60
+    return "%02d:%02d:%02d".format(hours, minutes, secs)
 }
