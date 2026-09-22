@@ -18,9 +18,33 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        val storePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull
+        val storePasswordValue = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
+        val keyAliasValue = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
+        val keyPasswordValue = providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull
+
+        if (
+            !storePath.isNullOrBlank() &&
+            !storePasswordValue.isNullOrBlank() &&
+            !keyAliasValue.isNullOrBlank() &&
+            !keyPasswordValue.isNullOrBlank()
+        ) {
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+            }
+        }
+    }
+
+    val releaseSigningConfig = signingConfigs.findByName("release")
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            releaseSigningConfig?.let { signingConfig = it }
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
