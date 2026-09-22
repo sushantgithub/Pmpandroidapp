@@ -101,8 +101,11 @@ fun ChapterDetailScreen(
         }
     }
 
-    LaunchedEffect(readingProgress, chapterId) {
-        if (chapter != null && readingProgress >= 0.80f) {
+    // A bookmark/deep-link can jump directly near the end of a chapter. Do not
+    // treat that jump as evidence that the user read the preceding content.
+    val allowAutomaticReadMark = initialSection < 0
+    LaunchedEffect(readingProgress, chapterId, allowAutomaticReadMark) {
+        if (allowAutomaticReadMark && chapter != null && readingProgress >= 0.80f) {
             AppState.markRead(chapterId)
         }
     }
