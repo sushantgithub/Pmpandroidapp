@@ -4,6 +4,7 @@ import kotlin.random.Random
 
 object StudyRepository {
     const val FORMULA_DRILL_ID = "formulas-drill"
+    const val FULL_EXAM_ID = "full-exam-180"
 
     private val chapterOrder = listOf(
         "blueprint",
@@ -33,7 +34,7 @@ object StudyRepository {
 
     val chapters: List<Chapter> = ordered(ChapterCatalog.all)
     val formulas: List<Formula> = FormulaCatalog.all
-    val allQuestions: List<QuizQuestion> = QuizBank.all
+    val allQuestions: List<QuizQuestion> = QuizBank.all + ExamReadinessQuestions.all
 
     private fun ordered(source: List<Chapter>): List<Chapter> {
         val byId = source.associateBy { it.id }
@@ -129,7 +130,17 @@ object StudyRepository {
         )
     }
 
-    val quizPacks: List<QuizPack> = listOf(formulaDrill) + chapters.mapNotNull { chapter ->
+    /** Full-length practice mode: 180 unique questions, 240 minutes, no instant feedback. */
+    val fullExam: QuizPack = QuizPack(
+        id = FULL_EXAM_ID,
+        title = "Full-length exam practice",
+        subtitle = "180 questions · 240 minutes · Feedback after submission",
+        questions = allQuestions.shuffled(Random(seed = 20260922)),
+        examMode = true,
+        timeLimitMinutes = 240
+    )
+
+    val quizPacks: List<QuizPack> = listOf(fullExam, formulaDrill) + chapters.mapNotNull { chapter ->
         val qs = questionsForChapter(chapter.id)
         if (qs.isEmpty()) null
         else QuizPack(
