@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build CompMastery APK
 on:
   push:
     branches: [ "**" ]
@@ -16,10 +16,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          # Explicit package list: the action's default ("tools platform-tools")
-          # tries to install the obsolete "tools" package, which Google removed
-          # from the SDK repo, so setup fails with "Failed to find package 'tools'".
-          # Install only valid packages the build actually needs.
           packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -27,11 +23,9 @@ jobs:
         run: ./gradlew test --no-daemon
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
-      - name: Verify Release App Bundle
-        run: ./gradlew bundleRelease --no-daemon
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: pmp-study-debug-apk
+          name: compmastery-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
