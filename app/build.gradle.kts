@@ -9,42 +9,18 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.sushant.pmpstudy"
+        applicationId = "com.sushant.compmastery"
         minSdk = 26
         targetSdk = 36
-        versionCode = 32
-        versionName = "2.8.0"
+        versionCode = 1
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
 
-    signingConfigs {
-        val storePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull
-        val storePasswordValue = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
-        val keyAliasValue = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
-        val keyPasswordValue = providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull
-
-        if (
-            !storePath.isNullOrBlank() &&
-            !storePasswordValue.isNullOrBlank() &&
-            !keyAliasValue.isNullOrBlank() &&
-            !keyPasswordValue.isNullOrBlank()
-        ) {
-            create("release") {
-                storeFile = file(storePath)
-                storePassword = storePasswordValue
-                keyAlias = keyAliasValue
-                keyPassword = keyPasswordValue
-            }
-        }
-    }
-
-    val releaseSigningConfig = signingConfigs.findByName("release")
-
     buildTypes {
         release {
             isMinifyEnabled = true
-            releaseSigningConfig?.let { signingConfig = it }
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -58,13 +34,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
-    buildFeatures {
-        compose = true
-    }
+    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true }
 
     packaging {
         resources {
@@ -88,6 +59,5 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-
     testImplementation("junit:junit:4.13.2")
 }
