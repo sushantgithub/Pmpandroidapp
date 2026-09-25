@@ -157,7 +157,7 @@ private fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                     LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    Text("\${completed.size} of 10 weeks completed")
+                    Text("${completed.size} of 10 weeks completed")
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
                         Text(if (completed.size == 10) "Review Course" else "Continue Learning")
@@ -181,7 +181,7 @@ private fun HomeScreen(
             Card(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
                     Text("Assessment", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Best score: $bestQuizScore / \${quizQuestions.size}")
+                    Text("Best score: $bestQuizScore / ${quizQuestions.size}")
                     Spacer(Modifier.height(8.dp))
                     Text("Use the Quiz tab after each few weeks to check whether you can apply the concepts, not only recognize the terminology.")
                 }
@@ -223,7 +223,7 @@ private fun LearnScreen(completed: Set<Int>, onWeek: (Int) -> Unit) {
             ) {
                 Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 3.dp) {
-                        Text("W\${week.number}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), fontWeight = FontWeight.Bold)
+                        Text("W${week.number}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
@@ -240,6 +240,7 @@ private fun LearnScreen(completed: Set<Int>, onWeek: (Int) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WeekDetailScreen(
     week: CourseWeek,
@@ -249,7 +250,7 @@ private fun WeekDetailScreen(
 ) {
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Week \${week.number}") },
+            title = { Text("Week ${week.number}") },
             navigationIcon = {
                 IconButton(onClick = onBack) { Icon(Icons.Default.KeyboardArrowLeft, "Back") }
             }
@@ -283,7 +284,7 @@ private fun WeekDetailScreen(
                         Text("Knowledge Check", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
                         week.knowledgeCheck.forEachIndexed { index, question ->
-                            Text("\${index + 1}. $question", modifier = Modifier.padding(vertical = 5.dp))
+                            Text("${index + 1}. $question", modifier = Modifier.padding(vertical = 5.dp))
                         }
                     }
                 }
@@ -292,7 +293,7 @@ private fun WeekDetailScreen(
                     onClick = { onCompleteChanged(!complete) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (complete) "Mark as Not Completed" else "Mark Week \${week.number} Complete")
+                    Text(if (complete) "Mark as Not Completed" else "Mark Week ${week.number} Complete")
                 }
             }
         }
@@ -317,7 +318,7 @@ private fun ExcelLabScreen() {
         itemsIndexed(excelLabs) { index, lab ->
             Card(Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth()) {
                 Column(Modifier.padding(18.dp)) {
-                    Text("Lab \${index + 1}: \${lab.title}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Lab ${index + 1}: ${lab.title}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(lab.skill, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(10.dp))
                     Text("Formula", style = MaterialTheme.typography.labelLarge)
@@ -378,7 +379,7 @@ private fun ToolkitScreen() {
                     MoneyField("Range midpoint", midpoint) { midpoint = it }
                     MoneyField("Range maximum", maximum) { maximum = it }
                     ResultRow("Compa-Ratio", compa?.let { DecimalFormat("0.000").format(it) } ?: "—")
-                    ResultRow("Range Penetration", penetration?.let { "\${DecimalFormat("0.0").format(it * 100)}%" } ?: "—")
+                    ResultRow("Range Penetration", penetration?.let { "${DecimalFormat("0.0").format(it * 100)}%" } ?: "—")
                 }
             }
             Card(Modifier.fillMaxWidth()) {
@@ -464,7 +465,7 @@ private fun QuizScreen(bestScore: Int, onScore: (Int) -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text("Assessment complete", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("$score / \${questions.size}", style = MaterialTheme.typography.headlineMedium)
+            Text("$score / ${questions.size}", style = MaterialTheme.typography.headlineMedium)
             val pct = if (questions.isNotEmpty()) score * 100 / questions.size else 0
             Text("$pct%")
             Spacer(Modifier.height(10.dp))
@@ -475,7 +476,7 @@ private fun QuizScreen(bestScore: Int, onScore: (Int) -> Unit) {
             }) { Text("Retake") }
             if (selectedWeek == 0) {
                 Spacer(Modifier.height(8.dp))
-                Text("Best full-course score: \${maxOf(bestScore, score)} / \${quizQuestions.size}", style = MaterialTheme.typography.bodySmall)
+                Text("Best full-course score: ${maxOf(bestScore, score)} / ${quizQuestions.size}", style = MaterialTheme.typography.bodySmall)
             }
         }
         return
@@ -499,8 +500,8 @@ private fun QuizScreen(bestScore: Int, onScore: (Int) -> Unit) {
         Column(
             Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState())
         ) {
-            Text("Question \${index + 1} of \${questions.size}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text("Week \${q.week}", style = MaterialTheme.typography.labelMedium)
+            Text("Question ${index + 1} of ${questions.size}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text("Week ${q.week}", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(10.dp))
             Text(q.question, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(14.dp))
