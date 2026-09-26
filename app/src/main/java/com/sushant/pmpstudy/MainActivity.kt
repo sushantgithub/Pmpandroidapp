@@ -181,7 +181,7 @@ private fun HomeScreen(
             Card(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
                     Text("Assessment", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Best score: $bestQuizScore / ${quizQuestions.size}")
+                    Text("Best score: $bestQuizScore / ${allQuizQuestions.size}")
                     Spacer(Modifier.height(8.dp))
                     Text("Use the Quiz tab after each few weeks to check whether you can apply the concepts, not only recognize the terminology.")
                 }
@@ -265,12 +265,23 @@ private fun WeekDetailScreen(
                 Text(week.objective, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(18.dp))
             }
-            items(week.lessons) { lesson ->
+            itemsIndexed(week.lessons) { lessonIndex, lesson ->
+                val detail = deepDiveFor(week.number, lessonIndex)
                 Card(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(Modifier.padding(18.dp)) {
-                        Text(lesson.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(lesson.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(10.dp))
                         Text(lesson.body, style = MaterialTheme.typography.bodyLarge)
+                        if (detail != null) {
+                            Spacer(Modifier.height(18.dp))
+                            HorizontalDivider()
+                            DeepDiveSection("Why this matters", detail.whyItMatters)
+                            DeepDiveSection("Step-by-step method", detail.method)
+                            DeepDiveSection("Worked example", detail.workedExample)
+                            DeepDiveSection("Practical exercise", detail.practice)
+                            DeepDiveSection("Common mistakes", detail.pitfalls)
+                            DeepDiveSection("How to discuss it with managers / HRBPs", detail.partnerConversation)
+                        }
                     }
                 }
             }
@@ -312,6 +323,14 @@ private fun SectionCard(title: String, body: String) {
 }
 
 @Composable
+private fun DeepDiveSection(title: String, body: String) {
+    Spacer(Modifier.height(16.dp))
+    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+    Spacer(Modifier.height(6.dp))
+    Text(body, style = MaterialTheme.typography.bodyLarge)
+}
+
+@Composable
 private fun ExcelLabScreen() {
     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
         item { ScreenHeader("Excel Lab", "Practice the calculations and analysis used in real compensation work") }
@@ -328,6 +347,16 @@ private fun ExcelLabScreen() {
                     Spacer(Modifier.height(10.dp))
                     Text("Exercise", style = MaterialTheme.typography.labelLarge)
                     Text(lab.exercise)
+
+                    excelLabDeepDives.getOrNull(index)?.let { detail ->
+                        Spacer(Modifier.height(16.dp))
+                        HorizontalDivider()
+                        DeepDiveSection("Work scenario", detail.scenario)
+                        DeepDiveSection("Step-by-step in Excel", detail.steps)
+                        DeepDiveSection("Worked sample", detail.sample)
+                        DeepDiveSection("Validation checks", detail.validation)
+                        DeepDiveSection("Challenge", detail.challenge)
+                    }
                 }
             }
         }
@@ -336,7 +365,7 @@ private fun ExcelLabScreen() {
                 Column(Modifier.padding(18.dp)) {
                     Text("Capstone Excel Workbook", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(8.dp))
-                    Text("Build a 500-employee model containing Employee ID, job family, grade, location, performance, salary, range min/mid/max, market P25/P50/P75, bonus target, promotion flag and critical-skill flag. Add compa-ratio, range penetration, market ratio, review flags, merit increase, new salary, budget variance and a management PivotTable dashboard.")
+                    Text(capstoneGuide, style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
@@ -452,7 +481,7 @@ private fun currency(value: Double): String = "₹" + DecimalFormat("#,##,##0.00
 @Composable
 private fun QuizScreen(bestScore: Int, onScore: (Int) -> Unit) {
     var selectedWeek by remember { mutableIntStateOf(0) }
-    val questions = if (selectedWeek == 0) quizQuestions else quizQuestions.filter { it.week == selectedWeek }
+    val questions = if (selectedWeek == 0) allQuizQuestions else allQuizQuestions.filter { it.week == selectedWeek }
     var index by remember(selectedWeek) { mutableIntStateOf(0) }
     var selected by remember(selectedWeek, index) { mutableStateOf<Int?>(null) }
     var score by remember(selectedWeek) { mutableIntStateOf(0) }
@@ -476,7 +505,7 @@ private fun QuizScreen(bestScore: Int, onScore: (Int) -> Unit) {
             }) { Text("Retake") }
             if (selectedWeek == 0) {
                 Spacer(Modifier.height(8.dp))
-                Text("Best full-course score: ${maxOf(bestScore, score)} / ${quizQuestions.size}", style = MaterialTheme.typography.bodySmall)
+                Text("Best full-course score: ${maxOf(bestScore, score)} / ${allQuizQuestions.size}", style = MaterialTheme.typography.bodySmall)
             }
         }
         return
