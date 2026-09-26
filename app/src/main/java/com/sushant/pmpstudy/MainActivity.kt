@@ -173,7 +173,7 @@ private fun HomeScreen(
             ) {
                 MetricCard("10", "Weeks", Modifier.weight(1f))
                 MetricCard("10", "Excel Labs", Modifier.weight(1f))
-                MetricCard("20", "Quiz Qs", Modifier.weight(1f))
+                MetricCard(allQuizQuestions.size.toString(), "Quiz Qs", Modifier.weight(1f))
             }
         }
         item {
